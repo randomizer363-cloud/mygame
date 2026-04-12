@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Мухи, Котлеты и Иван (со звуком)</title>
+    <title>Мухи, Котлеты и Иван (v2.0)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Стили остаются прежними */
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #f0f0f0; color: #333; height: 100vh; width: 100vw; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; text-align: center; padding: 20px; box-sizing: border-box; }
         #start-overlay { background-color: rgba(255, 255, 255, 0.98); cursor: pointer; }
@@ -35,8 +34,8 @@
     <div id="start-overlay" class="overlay" onclick="startGame()">
         <h1>Накорми Бота!</h1>
         <p>🥩 Котлеты — Направо<br>🪰 Мухи — Налево</p>
-        <p>За каждые 10 котлет: <b>+1 балл</b><br>Ошибка с мухой: <b>-0.25 балла</b></p>
-        <p>Победа: 5 баллов</p>
+        <p>За каждые 10 котлет: <b>+1 балл</b><br>Ошибка с мухой: <b>-0.5 балла</b></p>
+        <p>Победа: <b>10 баллов</b></p>
         <div style="font-weight:bold; color:#0088cc; margin-top:20px;">ТАПНИ ДЛЯ СТАРТА</div>
     </div>
 
@@ -59,7 +58,7 @@
 
         <div id="info-bar">
             <div id="timer" class="info-item">⏳ 3.0с</div>
-            <div id="score-points" class="info-item">🏆 Баллы: 0/5</div>
+            <div id="score-points" class="info-item">🏆 Баллы: 0/10</div>
             <div id="cutlet-count" class="info-item">🥩 Котлеты: 0/10</div>
             <div id="errors" class="info-item">❌ Ошибки: 0/15</div>
         </div>
@@ -81,11 +80,10 @@
         const pointsEl = document.getElementById('score-points');
         const cutletEl = document.getElementById('cutlet-count');
 
-        // Функция проигрывания звука
         function playSound(id) {
             const audio = document.getElementById(id);
             if (audio) {
-                audio.currentTime = 0; // Сброс в начало
+                audio.currentTime = 0;
                 audio.play().catch(e => console.log("Sound blocked")); 
             }
         }
@@ -108,10 +106,10 @@
             resetUI();
             
             const rand = Math.random();
-            if(rand < 0.0083) { // Шанс 1 из 120
+            if(rand < 0.0083) { 
                 currentItem = 'ivan';
                 card.innerText = '😷';
-                playSound('snd-ivan'); // Звук появления Ивана
+                playSound('snd-ivan');
                 setupBeerMode();
             } else {
                 currentItem = Math.random() > 0.5 ? 'cutlet' : 'fly';
@@ -146,11 +144,14 @@
 
             if(currentItem === 'ivan') {
                 if(side === beerSide) {
-                    points = 5;
-                    endGame("ivan_win");
+                    points += 5; // Иван дает +5 баллов
+                    tg.HapticFeedback.notificationOccurred('success');
+                    if (points >= 10) endGame("win");
+                    else nextItem();
                 } else {
                     endGame("ivan_stole");
                 }
+                updateLabels();
                 return;
             }
 
@@ -158,7 +159,7 @@
             
             if(isCorrect) {
                 timeLeft += 1.0;
-                playSound('snd-success'); // Звук успеха
+                playSound('snd-success');
                 if(currentItem === 'cutlet') {
                     stats.cutlets++;
                     cutletsProgress++;
@@ -172,8 +173,8 @@
                 }
             } else {
                 errorCount++;
-                playSound('snd-error'); // Звук ошибки
-                if(currentItem === 'fly') points = Math.max(0, points - 0.25); 
+                playSound('snd-error');
+                if(currentItem === 'fly') points = Math.max(0, points - 0.5); // Штраф -0.5 за муху
                 
                 if(errorCount % 5 === 0 && errorCount < 15) showMsg("ОШИБКА!");
                 if(errorCount >= 15) return endGame("fatal");
@@ -181,12 +182,12 @@
             }
 
             updateLabels();
-            if(points >= 5) endGame("win");
+            if(points >= 10) endGame("win");
             else nextItem();
         }
 
         function updateLabels() {
-            pointsEl.innerText = `🏆 Баллы: ${Number.isInteger(points) ? points : points.toFixed(2)}/5`;
+            pointsEl.innerText = `🏆 Баллы: ${Number.isInteger(points) ? points : points.toFixed(1)}/10`;
             cutletEl.innerText = `🥩 Котлеты: ${cutletsProgress}/10`;
             document.getElementById('errors').innerText = `❌ Ошибки: ${errorCount}/15`;
         }
@@ -201,27 +202,31 @@
             gameActive = false;
             let title = "", msg = "";
             
-            if(reason === "win" || reason === "ivan_win") {
+            if(reason === "win") {
                 title = "ПОБЕДА! 🎉";
-                msg = reason === "ivan_win" ? "Иван дошел до пивнушки! +5 баллов!" : "Вы накормили всех!";
-                playSound('snd-win'); // Звук победы
+                msg = "Вы набрали 10 баллов и накормили всех!";
+                playSound('snd-win');
             } else if(reason === "ivan_stole") {
                 title = "Иван украл все котлеты! 😱";
                 msg = "Нужно было отправлять его в пивнушку!";
-                playSound('snd-lose'); // Звук проигрыша
+                playSound('snd-lose');
             } else {
                 title = "ИГРА ОКОНЧЕНА";
                 msg = reason === "fatal" ? "Слишком много ошибок." : "Время вышло!";
-                playSound('snd-lose'); // Звук проигрыша
+                playSound('snd-lose');
             }
 
             document.getElementById('finish-content').innerHTML = `
                 <h2 style="color:#ffeb3b">${title}</h2>
                 <p>${msg}</p>
-                <p>Верных котлет: ${stats.cutlets}<br>Мух прогнано: ${stats.flies}</p>
-                <p>Итого баллов: ${points}</p>
+                <div style="margin: 15px 0; border-top: 1px solid #555; padding-top: 10px;">
+                    <p>Общее время игры: <span style="color:#64b5f6; font-weight:bold;">${totalTime.toFixed(1)} сек</span></p>
+                    <p>Итого баллов: <span style="color:#64b5f6; font-weight:bold;">${points}</span></p>
+                    <p>Верных котлет: ${stats.cutlets}<br>Мух прогнано: ${stats.flies}</p>
+                </div>
             `;
             document.getElementById('finish-overlay').style.display = 'flex';
+            tg.HapticFeedback.notificationOccurred(reason === 'win' ? 'success' : 'error');
         }
 
         document.addEventListener('keydown', e => {
