@@ -107,7 +107,8 @@
             resetUI();
             
             const rand = Math.random();
-            if(rand < 0.025) { // Шанс 1 из 40 на Ивана
+            // Шанс снижен в 3 раза: было 0.025, стало ~0.0083 (1 из 120)
+            if(rand < 0.0083) { 
                 currentItem = 'ivan';
                 card.innerText = '😷';
                 setupBeerMode();
@@ -169,7 +170,6 @@
                 }
             } else {
                 errorCount++;
-                // НОВОЕ ПРАВИЛО: -0.25 балла за ошибку с мухой
                 if(currentItem === 'fly') points = Math.max(0, points - 0.25); 
                 
                 if(errorCount % 5 === 0 && errorCount < 15) showMsg("ОШИБКА!");
@@ -183,7 +183,7 @@
         }
 
         function updateLabels() {
-            pointsEl.innerText = `🏆 Баллы: ${points % 1 === 0 ? points : points.toFixed(2)}/5`;
+            pointsEl.innerText = `🏆 Баллы: ${Number.isInteger(points) ? points : points.toFixed(2)}/5`;
             cutletEl.innerText = `🥩 Котлеты: ${cutletsProgress}/10`;
             document.getElementById('errors').innerText = `❌ Ошибки: ${errorCount}/15`;
         }
