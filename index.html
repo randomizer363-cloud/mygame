@@ -102,3 +102,203 @@
 
         /* Панель с кнопками управления */
         #controls {
+            height: 120px;
+            background-color: white;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid #ddd;
+            padding-bottom: env(safe-area-inset-bottom); /* Учет "челки" снизу на iPhone */
+            box-shadow: 0 -3px 10px rgba(0,0,0,0.05);
+        }
+
+        /* Стили кнопок-стрелок */
+        .direction-btn {
+            width: 80px;
+            height: 80px;
+            border: none;
+            border-radius: 50%;
+            background-color: #0088cc; /* Цвет Telegram */
+            color: white;
+            font-size: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,136,204,0.3);
+            transition: background-color 0.1s, transform 0.1s;
+            -webkit-tap-highlight-color: transparent; /* Убираем синий блик при клике на iOS */
+        }
+
+        .direction-btn:active {
+            background-color: #006699;
+            transform: scale(0.95); /* Эффект нажатия */
+        }
+
+        /* СOverlay для уведомления "ОШИБКА" */
+        #error-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(217, 83, 79, 0.9); /* Красный прозрачный */
+            color: white;
+            display: none; /* Скрыт по умолчанию */
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            font-weight: bold;
+            z-index: 10;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="error-overlay">ОШИБКА!</div>
+
+    <div id="game-area">
+        <div class="half left-half">
+            <div class="label">Мухи</div>
+        </div>
+        <div class="half right-half">
+            <div class="label">Котлеты</div>
+        </div>
+
+        <div id="info-bar">
+            <div id="timer" class="info-item">⏳ 3.0с</div>
+            <div id="errors" class="info-item">❌ Ошибки: 0</div>
+        </div>
+
+        <div class="card-container">
+            <div id="card" class="card">🥩</div>
+        </div>
+    </div>
+
+    <div id="controls">
+        <button class="direction-btn" id="btn-left">←</button>
+        <button class="direction-btn" id="btn-right">→</button>
+    </div>
+
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Расширить на весь экран
+        tg.ready();
+
+        // Игровые переменные
+        let timeLeft = 3.0; // Текущее время раунда
+        let errorCount = 0; // Счётчик ошибок
+        let totalTime = 0;   // Общее время игры (счёт)
+        let currentItem = 'cutlet'; // Что сейчас на экране: 'fly' или 'cutlet'
+        let gameActive = true;
+        let gameInterval;
+
+        // Элементы DOM
+        const card = document.getElementById('card');
+        const timerEl = document.getElementById('timer');
+        const errorsEl = document.getElementById('errors');
+        const errorOverlay = document.getElementById('error-overlay');
+
+        // Эмодзи
+        const emojiFly = '🪰';
+        const emojiCutlet = '🥩';
+
+        // Функция генерации следующего объекта
+        function nextItem() {
+            if (!gameActive) return;
+
+            // Рандомно выбираем: муха (0) или котлета (1)
+            currentItem = Math.random() > 0.5 ? 'cutlet' : 'fly';
+            
+            // Плавно возвращаем карточку в центр, меняем текст и проявляем
+            card.style.transition = 'none'; // Убираем анимацию для мгновенного сброса
+            card.style.transform = 'translate(0, 0) scale(0.5)';
+            card.style.opacity = '0';
+            card.innerText = currentItem === 'cutlet' ? emojiCutlet : emojiFly;
+
+            // Небольшая задержка перед появлением для эффекта
+            setTimeout(() => {
+                card.style.transition = 'transform 0.2s ease-out, opacity 0.2s';
+                card.style.transform = 'translate(0, 0) scale(1)';
+                card.style.opacity = '1';
+            }, 50);
+        }
+
+        // Основной цикл таймера (срабатывает каждые 100 мс)
+        gameInterval = setInterval(() => {
+            if (!gameActive) return;
+
+            timeLeft -= 0.1; // Отнимаем время раунда
+            totalTime += 0.1; // Наращиваем общий счёт
+
+            // Обновляем отображение таймера
+            timerEl.innerText = `⏳ ${Math.max(0, timeLeft).toFixed(1)}с`;
+
+            // Проверка проигрыша по времени
+            if (timeLeft <= 0) {
+                endGame("Время вышло!");
+            }
+        }, 100);
+
+        // Обработка выбора пользователя
+        function makeChoice(direction) {
+            if (!gameActive) return;
+
+            const isCorrect = (direction === 'right' && currentItem === 'cutlet') || 
+                              (direction === 'left' && currentItem === 'fly');
+
+            // Анимация улетания карточки
+            const moveX = direction === 'right' ? 200 : -200;
+            card.style.transform = `translate(${moveX}px, 0) scale(0.5) rotate(${moveX/10}deg)`;
+            card.style.opacity = '0';
+
+            if (isCorrect) {
+                // Правильно: добавляем время
+                timeLeft += 1.0;
+                tg.HapticFeedback.notificationOccurred('success'); // Виброотклик
+            } else {
+                // Неправильно: считаем ошибки
+                errorCount++;
+                errorsEl.innerText = `❌ Ошибки: ${errorCount}`;
+                tg.HapticFeedback.notificationOccurred('warning'); // Виброотклик
+
+                if (errorCount === 5) {
+                    // Показываем оверлей "ОШИБКА" на 1 секунду
+                    errorOverlay.style.display = 'flex';
+                    setTimeout(() => {
+                        errorOverlay.style.display = 'none';
+                    }, 1000);
+                } else if (errorCount >= 8) { 
+                    // 5 обычных + 3 фатальных = 8.
+                    endGame("ФАТАЛЬНАЯ ОШИБКА!");
+                    return; // Прерываем, чтобы не вызвался nextItem
+                }
+            }
+
+            // Загружаем следующий объект через небольшую паузу (пока летит старый)
+            setTimeout(nextItem, 200);
+        }
+
+        // Конец игры
+        function endGame(message) {
+            gameActive = false;
+            clearInterval(gameInterval);
+            tg.HapticFeedback.notificationOccurred('error'); // Сильный виброотклик
+            
+            // Показываем финальный счет
+            alert(`${message}\n\nВы продержались: ${totalTime.toFixed(1)} секунд.`);
+            
+            // Закрываем Web App
+            tg.close();
+        }
+
+        // Навешиваем обработчики на кнопки
+        document.getElementById('btn-left').addEventListener('click', () => makeChoice('left'));
+        document.getElementById('btn-right').addEventListener('click', () => makeChoice('right'));
+
+        // Запускаем первую карточку
+        nextItem();
+
+    </script>
+</body>
+</html>
