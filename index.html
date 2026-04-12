@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Мухи и Котлеты</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; text-align: center; background: #f4f4f4; overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .card { width: 200px; height: 200px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); touch-action: none; transition: transform 0.2s; }
+        #timer { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+        #score { position: absolute; top: 10px; right: 20px; }
+        .error-overlay { color: red; font-weight: bold; position: absolute; top: 50%; display: none; }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="timer">Время: 3.0с</div>
+        <div id="score">Ошибки: 0</div>
+        <div id="card" class="card">🥩</div>
+        <div id="msg" class="error-overlay">ОШИБКА!</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let timeLeft = 3.0;
+        let errors = 0;
+        let totalTime = 0;
+        let currentItem = 'cutlet'; // 'fly' или 'cutlet'
+        const card = document.getElementById('card');
+        const timerEl = document.getElementById('timer');
+        const scoreEl = document.getElementById('score');
+
+        function nextItem() {
+            currentItem = Math.random() > 0.5 ? 'cutlet' : 'fly';
+            card.innerText = currentItem === 'cutlet' ? '🥩' : '🪰';
+            card.style.transform = 'translateX(0)';
+        }
+
+        // Логика таймера
+        const gameInterval = setInterval(() => {
+            timeLeft -= 0.1;
+            totalTime += 0.1;
+            timerEl.innerText = `Время: ${timeLeft.toFixed(1)}с`;
+
+            if (timeLeft <= 0) {
+                endGame("Время вышло!");
+            }
+        }, 100);
+
+        function endGame(reason) {
+            clearInterval(gameInterval);
+            alert(`${reason}\nВаш результат: ${totalTime.toFixed(1)} сек.`);
+            tg.close();
+        }
+
+        // Обработка свайпов (упрощенно)
+        let startX = 0;
+        card.addEventListener('touchstart', e => startX = e.touches[0].clientX);
+        card.addEventListener('touchend', e => {
+            let diff = e.changedTouches[0].clientX - startX;
+            if (Math.abs(diff) < 50) return;
+
+            const isRight = diff > 0;
+            const isCorrect = (isRight && currentItem === 'cutlet') || (!isRight && currentItem === 'fly');
+
+            if (isCorrect) {
+                timeLeft += 1.0;
+            } else {
+                errors++;
+                scoreEl.innerText = `Ошибки: ${errors}`;
+                if (errors === 5) {
+                    document.getElementById('msg').style.display = 'block';
+                    setTimeout(() => document.getElementById('msg').style.display = 'none', 1000);
+                }
+                if (errors >= 8) { // 5 мелких + 3 фатальных = 8 итого (или по вашей логике 3 сразу)
+                    endGame("ФАТАЛЬНАЯ ОШИБКА!");
+                }
+            }
+            nextItem();
+        });
+    </script>
+</body>
+</html>
