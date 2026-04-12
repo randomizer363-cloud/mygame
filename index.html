@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Мухи, Котлеты и Иван (v2.0)</title>
+    <title>Мухи, Котлеты и Иван (v2.1)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #f0f0f0; color: #333; height: 100vh; width: 100vw; }
@@ -27,7 +27,7 @@
 
     <audio id="snd-success" src="success.mp3" preload="auto"></audio>
     <audio id="snd-error" src="error.mp3" preload="auto"></audio>
-    <audio id="snd-ivan" src="ivan.mp3" preload="auto"></audio>
+    <audio id="snd-error-big" src="error1.mp3" preload="auto"></audio> <audio id="snd-ivan" src="ivan.mp3" preload="auto"></audio>
     <audio id="snd-win" src="win.mp3" preload="auto"></audio>
     <audio id="snd-lose" src="lose.mp3" preload="auto"></audio>
 
@@ -104,7 +104,6 @@
         function nextItem() {
             if(!gameActive) return;
             resetUI();
-            
             const rand = Math.random();
             if(rand < 0.0083) { 
                 currentItem = 'ivan';
@@ -115,7 +114,6 @@
                 currentItem = Math.random() > 0.5 ? 'cutlet' : 'fly';
                 card.innerText = currentItem === 'cutlet' ? '🍔' : '🪰';
             }
-
             card.style.transition = 'none';
             card.style.transform = 'scale(0.5)';
             card.style.opacity = '0';
@@ -141,10 +139,9 @@
 
         function handleChoice(side) {
             if(!gameActive) return;
-
             if(currentItem === 'ivan') {
                 if(side === beerSide) {
-                    points += 5; // Иван дает +5 баллов
+                    points += 5;
                     tg.HapticFeedback.notificationOccurred('success');
                     if (points >= 10) endGame("win");
                     else nextItem();
@@ -154,9 +151,7 @@
                 updateLabels();
                 return;
             }
-
             const isCorrect = (side === 'right' && currentItem === 'cutlet') || (side === 'left' && currentItem === 'fly');
-            
             if(isCorrect) {
                 timeLeft += 1.0;
                 playSound('snd-success');
@@ -168,19 +163,22 @@
                         cutletsProgress = 0;
                         tg.HapticFeedback.notificationOccurred('success');
                     }
-                } else {
-                    stats.flies++;
-                }
+                } else { stats.flies++; }
             } else {
                 errorCount++;
-                playSound('snd-error');
-                if(currentItem === 'fly') points = Math.max(0, points - 0.5); // Штраф -0.5 за муху
+                if(currentItem === 'fly') points = Math.max(0, points - 0.5);
                 
-                if(errorCount % 5 === 0 && errorCount < 15) showMsg("ОШИБКА!");
+                // Проверяем кратность 5 для особого звука и экрана
+                if(errorCount % 5 === 0 && errorCount < 15) {
+                    showMsg("ОШИБКА!");
+                    playSound('snd-error-big'); // Играем error1.mp3
+                } else {
+                    playSound('snd-error'); // Обычный звук ошибки
+                }
+                
                 if(errorCount >= 15) return endGame("fatal");
                 tg.HapticFeedback.notificationOccurred('warning');
             }
-
             updateLabels();
             if(points >= 10) endGame("win");
             else nextItem();
@@ -201,21 +199,19 @@
         function endGame(reason) {
             gameActive = false;
             let title = "", msg = "";
-            
             if(reason === "win") {
                 title = "ПОБЕДА! 🎉";
-                msg = "Вы набрали 10 баллов и накормили всех!";
+                msg = "Вы набрали 10 баллов!";
                 playSound('snd-win');
             } else if(reason === "ivan_stole") {
                 title = "Иван украл все котлеты! 😱";
-                msg = "Нужно было отправлять его в пивнушку!";
+                msg = "Нужно было в пивнушку!";
                 playSound('snd-lose');
             } else {
                 title = "ИГРА ОКОНЧЕНА";
                 msg = reason === "fatal" ? "Слишком много ошибок." : "Время вышло!";
                 playSound('snd-lose');
             }
-
             document.getElementById('finish-content').innerHTML = `
                 <h2 style="color:#ffeb3b">${title}</h2>
                 <p>${msg}</p>
