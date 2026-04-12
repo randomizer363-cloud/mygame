@@ -15,7 +15,18 @@
             z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center;
             text-align: center; cursor: pointer;
         }
-        .splash-title { font-size: 48px; font-weight: 900; color: #333; margin-bottom: 10px; text-shadow: 2px 2px 0px #fff; }
+        .splash-title { 
+    /* Используем vw (viewport width) для резинового размера + ограничение max-size */
+    font-size: calc(24px + 5vw); 
+    font-weight: 900; 
+    color: #333; 
+    margin-bottom: 10px; 
+    text-shadow: 2px 2px 0px #fff; 
+    /* Добавляем отступы по бокам, чтобы текст гарантированно не прилипал к краям */
+    padding: 0 10px; 
+    box-sizing: border-box; 
+    width: 100%;
+}
         .splash-subtitle { font-size: 18px; color: #555; letter-spacing: 2px; }
 
         /* ГЛАВНОЕ МЕНЮ (Сетка уровней) */
