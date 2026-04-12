@@ -31,4 +31,197 @@
         .zone-label { font-size: 24px; font-weight: bold; text-transform: uppercase; color: rgba(0,0,0,0.4); margin-bottom: 5px; user-select: none; }
         .special-label { font-size: 28px; color: #ffeb3b; text-shadow: 2px 2px 4px #000; font-weight: 900; display: none; }
 
-        #info-bar { position: absolute; top:
+        #info-bar { position: absolute; top: 100px; width: 100%; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; pointer-events: none; z-index: 10; }
+        .info-item { background: rgba(255, 255, 255, 0.9); padding: 5px 12px; border-radius: 15px; font-size: 14px; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+
+        .card-container { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); z-index: 5; }
+        .card { width: 150px; height: 150px; background: white; border-radius: 30px; display: flex; align-items: center; justify-content: center; font-size: 70px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); transition: all 0.2s ease-out; }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay" class="overlay" onclick="startGame()">
+        <h1>Накорми Бота!</h1>
+        <p>🥩 Котлеты — Направо<br>🪰 Мухи — Налево</p>
+        <p>За каждые 10 котлет: <b>+1 балл</b><br>Ошибка с мухой: <b>-0.25 балла</b></p>
+        <p>Победа: 5 баллов</p>
+        <div style="font-weight:bold; color:#0088cc; margin-top:20px;">ТАПНИ ДЛЯ СТАРТА</div>
+    </div>
+
+    <div id="error-overlay" class="overlay">ОШИБКА!</div>
+
+    <div id="finish-overlay" class="overlay">
+        <div id="finish-content"></div>
+        <button onclick="location.reload()" style="margin-top:20px; padding:12px 24px; border-radius:10px; background:#4caf50; color:white; border:none; cursor:pointer;">Играть снова</button>
+    </div>
+
+    <div id="game-area">
+        <div class="tap-zone" id="zone-left" onclick="handleChoice('left')">
+            <div class="zone-label" id="label-left">Мухи</div>
+            <div class="special-label" id="special-left">🍺 ПИВНУШКА</div>
+        </div>
+        <div class="tap-zone" id="zone-right" onclick="handleChoice('right')">
+            <div class="zone-label" id="label-right">Котлеты</div>
+            <div class="special-label" id="special-right">🍺 ПИВНУШКА</div>
+        </div>
+
+        <div id="info-bar">
+            <div id="timer" class="info-item">⏳ 3.0с</div>
+            <div id="score-points" class="info-item">🏆 Баллы: 0/5</div>
+            <div id="cutlet-count" class="info-item">🥩 Котлеты: 0/10</div>
+            <div id="errors" class="info-item">❌ Ошибки: 0/15</div>
+        </div>
+
+        <div class="card-container">
+            <div id="card" class="card" style="position: relative; left: 0; top: 0;">🥩</div>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let timeLeft = 3.0, errorCount = 0, totalTime = 0, points = 0;
+        let cutletsProgress = 0, currentItem = '', beerSide = null, gameActive = false;
+        let stats = { flies: 0, cutlets: 0 };
+
+        const card = document.getElementById('card');
+        const pointsEl = document.getElementById('score-points');
+        const cutletEl = document.getElementById('cutlet-count');
+
+        function startGame() {
+            document.getElementById('start-overlay').style.display = 'none';
+            document.getElementById('game-area').style.opacity = '1';
+            gameActive = true;
+            nextItem();
+            const loop = setInterval(() => {
+                if(!gameActive) { clearInterval(loop); return; }
+                timeLeft -= 0.1; totalTime += 0.1;
+                document.getElementById('timer').innerText = `⏳ ${Math.max(0, timeLeft).toFixed(1)}с`;
+                if(timeLeft <= 0) endGame("timeup");
+            }, 100);
+        }
+
+        function nextItem() {
+            if(!gameActive) return;
+            resetUI();
+            
+            const rand = Math.random();
+            if(rand < 0.025) { // Шанс 1 из 40 на Ивана
+                currentItem = 'ivan';
+                card.innerText = '😷';
+                setupBeerMode();
+            } else {
+                currentItem = Math.random() > 0.5 ? 'cutlet' : 'fly';
+                card.innerText = currentItem === 'cutlet' ? '🍔' : '🪰';
+            }
+
+            card.style.transition = 'none';
+            card.style.transform = 'scale(0.5)';
+            card.style.opacity = '0';
+            setTimeout(() => {
+                card.style.transition = 'all 0.2s';
+                card.style.transform = 'scale(1)';
+                card.style.opacity = '1';
+            }, 50);
+        }
+
+        function setupBeerMode() {
+            beerSide = Math.random() > 0.5 ? 'left' : 'right';
+            document.getElementById('special-' + beerSide).style.display = 'block';
+            document.getElementById('zone-' + beerSide).style.backgroundColor = '#6d4c41';
+        }
+
+        function resetUI() {
+            beerSide = null;
+            document.querySelectorAll('.special-label').forEach(el => el.style.display = 'none');
+            document.getElementById('zone-left').style.backgroundColor = '#ffdde1';
+            document.getElementById('zone-right').style.backgroundColor = '#d1e8ff';
+        }
+
+        function handleChoice(side) {
+            if(!gameActive) return;
+
+            if(currentItem === 'ivan') {
+                if(side === beerSide) {
+                    points = 5;
+                    endGame("ivan_win");
+                } else {
+                    endGame("ivan_stole");
+                }
+                return;
+            }
+
+            const isCorrect = (side === 'right' && currentItem === 'cutlet') || (side === 'left' && currentItem === 'fly');
+            
+            if(isCorrect) {
+                timeLeft += 1.0;
+                if(currentItem === 'cutlet') {
+                    stats.cutlets++;
+                    cutletsProgress++;
+                    if(cutletsProgress >= 10) {
+                        points++;
+                        cutletsProgress = 0;
+                        tg.HapticFeedback.notificationOccurred('success');
+                    }
+                } else {
+                    stats.flies++;
+                }
+            } else {
+                errorCount++;
+                // НОВОЕ ПРАВИЛО: -0.25 балла за ошибку с мухой
+                if(currentItem === 'fly') points = Math.max(0, points - 0.25); 
+                
+                if(errorCount % 5 === 0 && errorCount < 15) showMsg("ОШИБКА!");
+                if(errorCount >= 15) return endGame("fatal");
+                tg.HapticFeedback.notificationOccurred('warning');
+            }
+
+            updateLabels();
+            if(points >= 5) endGame("win");
+            else nextItem();
+        }
+
+        function updateLabels() {
+            pointsEl.innerText = `🏆 Баллы: ${points % 1 === 0 ? points : points.toFixed(2)}/5`;
+            cutletEl.innerText = `🥩 Котлеты: ${cutletsProgress}/10`;
+            document.getElementById('errors').innerText = `❌ Ошибки: ${errorCount}/15`;
+        }
+
+        function showMsg(text) {
+            const el = document.getElementById('error-overlay');
+            el.innerText = text; el.style.display = 'flex';
+            setTimeout(() => el.style.display = 'none', 800);
+        }
+
+        function endGame(reason) {
+            gameActive = false;
+            let title = "", msg = "";
+            
+            if(reason === "win" || reason === "ivan_win") {
+                title = "ПОБЕДА! 🎉";
+                msg = reason === "ivan_win" ? "Иван дошел до пивнушки! +5 баллов!" : "Вы накормили всех!";
+            } else if(reason === "ivan_stole") {
+                title = "Иван украл все котлеты! 😱";
+                msg = "Нужно было отправлять его в пивнушку!";
+            } else {
+                title = "ИГРА ОКОНЧЕНА";
+                msg = reason === "fatal" ? "Слишком много ошибок." : "Время вышло!";
+            }
+
+            document.getElementById('finish-content').innerHTML = `
+                <h2 style="color:#ffeb3b">${title}</h2>
+                <p>${msg}</p>
+                <p>Верных котлет: ${stats.cutlets}<br>Мух прогнано: ${stats.flies}</p>
+                <p>Итого баллов: ${points}</p>
+            `;
+            document.getElementById('finish-overlay').style.display = 'flex';
+        }
+
+        document.addEventListener('keydown', e => {
+            if(e.key === "ArrowLeft") handleChoice('left');
+            if(e.key === "ArrowRight") handleChoice('right');
+        });
+    </script>
+</body>
+</html>
