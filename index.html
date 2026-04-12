@@ -2,86 +2,103 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Мухи и Котлеты</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f4f4; overflow: hidden; }
-        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .card { width: 200px; height: 200px; background: white; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); touch-action: none; transition: transform 0.2s; }
-        #timer { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
-        #score { position: absolute; top: 10px; right: 20px; }
-        .error-overlay { color: red; font-weight: bold; position: absolute; top: 50%; display: none; }
-    </style>
-</head>
-<body>
-    <div id="game-container">
-        <div id="timer">Время: 3.0с</div>
-        <div id="score">Ошибки: 0</div>
-        <div id="card" class="card">🥩</div>
-        <div id="msg" class="error-overlay">ОШИБКА!</div>
-    </div>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-
-        let timeLeft = 3.0;
-        let errors = 0;
-        let totalTime = 0;
-        let currentItem = 'cutlet'; // 'fly' или 'cutlet'
-        const card = document.getElementById('card');
-        const timerEl = document.getElementById('timer');
-        const scoreEl = document.getElementById('score');
-
-        function nextItem() {
-            currentItem = Math.random() > 0.5 ? 'cutlet' : 'fly';
-            card.innerText = currentItem === 'cutlet' ? '🥩' : '🪰';
-            card.style.transform = 'translateX(0)';
+        /* Основные стили страницы */
+        body { 
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; /* Запрещаем скролл страницы */
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
         }
 
-        // Логика таймера
-        const gameInterval = setInterval(() => {
-            timeLeft -= 0.1;
-            totalTime += 0.1;
-            timerEl.innerText = `Время: ${timeLeft.toFixed(1)}с`;
-
-            if (timeLeft <= 0) {
-                endGame("Время вышло!");
-            }
-        }, 100);
-
-        function endGame(reason) {
-            clearInterval(gameInterval);
-            alert(`${reason}\nВаш результат: ${totalTime.toFixed(1)} сек.`);
-            tg.close();
+        /* Контейнер для игрового поля */
+        #game-area {
+            flex-grow: 1; /* Занимает все свободное место */
+            position: relative;
+            display: flex;
+            width: 100%;
         }
 
-        // Обработка свайпов (упрощенно)
-        let startX = 0;
-        card.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-        card.addEventListener('touchend', e => {
-            let diff = e.changedTouches[0].clientX - startX;
-            if (Math.abs(diff) < 50) return;
+        /* Фоновые половины */
+        .half {
+            width: 50%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Надписи сверху */
+            padding-top: 20px;
+            box-sizing: border-box;
+        }
 
-            const isRight = diff > 0;
-            const isCorrect = (isRight && currentItem === 'cutlet') || (!isRight && currentItem === 'fly');
+        .left-half {
+            background-color: #ffdde1; /* Нежно-розовый */
+            border-right: 2px solid rgba(0,0,0,0.1);
+        }
 
-            if (isCorrect) {
-                timeLeft += 1.0;
-            } else {
-                errors++;
-                scoreEl.innerText = `Ошибки: ${errors}`;
-                if (errors === 5) {
-                    document.getElementById('msg').style.display = 'block';
-                    setTimeout(() => document.getElementById('msg').style.display = 'none', 1000);
-                }
-                if (errors >= 8) { // 5 мелких + 3 фатальных = 8 итого (или по вашей логике 3 сразу)
-                    endGame("ФАТАЛЬНАЯ ОШИБКА!");
-                }
-            }
-            nextItem();
-        });
-    </script>
-</body>
-</html>
+        .right-half {
+            background-color: #d1e8ff; /* Нежно-голубой */
+        }
+
+        /* Стили для надписей "Мухи" и "Котлеты" */
+        .label {
+            font-size: 24px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #555;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.5);
+        }
+
+        /* Панель с информацией (таймер и ошибки) */
+        #info-bar {
+            position: absolute;
+            top: 70px; /* Чуть ниже надписей половин */
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            pointer-events: none; /* Чтобы не мешало кликам, если перекроет */
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 5px 15px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: 600;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        #timer { color: #333; }
+        #errors { color: #d9534f; } /* Красный цвет для ошибок */
+
+        /* Стили для карточки с объектом */
+        .card-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            perspective: 1000px; /* Для 3D эффектов при анимации */
+        }
+
+        .card {
+            width: 150px;
+            height: 150px;
+            background: white;
+            border-radius: 25px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 70px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: transform 0.2s ease-out, opacity 0.2s; /* Анимация при клике */
+        }
+
+        /* Панель с кнопками управления */
+        #controls {
