@@ -7,18 +7,49 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
+        
+        /* ГЛАВНЫЙ ЭКРАН */
         #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #bg-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+        
         #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+
         .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; background: rgba(0, 136, 204, 0.35); backdrop-filter: blur(8px); margin-bottom: 12px; width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
         .btn-calc { background: rgba(76, 175, 80, 0.35); }
+
+        /* КАЛЬКУЛЯТОР */
+        #calc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
         .calc-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 20px; text-align: center; color: #333; }
-        .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 12px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; }
+        .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
+        #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 12px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
+
+        /* МЕНЮ */
+        #menu-overlay { position: fixed; inset: 0; background: #fff; z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 20px; }
+        .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 85%; }
+        .level-card { height: 65px; background: #eee; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #aaa; transition: 0.2s; }
+        .level-card.open { background: #0088cc; color: white; }
+
+        /* ИГРА */
         #game-area { position: relative; width: 100%; height: 100%; display: none; overflow: hidden; background: #fff; }
-        .tap-zone { width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
+        .tap-zone { width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; transition: 0.3s; }
         #zone-left { background: #ffdde1; } #zone-right { background: #d1e8ff; }
+        .zone-label { font-weight: bold; opacity: 0.15; font-size: 26px; pointer-events: none; }
+        .pub-label { color: #ffeb3b; font-weight: 900; font-size: 22px; display: none; text-shadow: 1px 1px 2px #000; position: absolute; }
+
+        .card-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
         .card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
+        .fly-left { transform: translate(-300%, -50%) rotate(-30deg); opacity: 0; }
+        .fly-right { transform: translate(200%, -50%) rotate(30deg); opacity: 0; }
+
+        /* РАННЕР (УРОВЕНЬ 3) */
+        #runner-mode { position: absolute; inset: 0; display: none; background: #fff; }
+        #player-fly { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 60px; transition: left 0.15s; z-index: 15; }
+        .lane { width: 33.33%; height: 100%; float: left; position: relative; }
+        .falling-item { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); font-size: 50px; }
+
+        #info-bar { position: absolute; top: 50px; width: 100%; display: flex; justify-content: center; gap: 8px; z-index: 50; }
+        .info-item { background: rgba(255,255,255,0.9); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #eee; min-width: 60px; text-align: center; }
+        
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 30px; }
     </style>
 </head>
@@ -31,43 +62,55 @@
         <button class="btn-ui btn-calc" onclick="toggleCalc(true)">🧮 КАЛЬКУЛЯТОР</button>
     </div>
 
-    <div id="calc-overlay" style="position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:400; display:none; align-items:center; justify-content:center;">
+    <div id="calc-overlay">
         <div class="calc-window">
-            <h3 style="margin-top:0">🧮 Расчет пайка</h3>
+            <h3 style="margin-top:0; color:#4caf50">🧮 Калькулятор</h3>
             <input type="number" id="calcA" class="calc-input" placeholder="Количество человек">
             <input type="number" id="calcB" class="calc-input" placeholder="Количество дней">
             <input type="text" id="calcD" class="calc-input" placeholder="Ваше имя">
-            <div id="calcOutput">Введите данные...</div>
-            <button class="btn-ui" style="width:100%; margin-top:10px; background:#4caf50; opacity:1" onclick="doCalc()">РАССЧИТАТЬ</button>
-            <button class="btn-ui" style="width:100%; background:#9e9e9e; opacity:1" onclick="resetCalc()">СБРОС</button>
+            <div id="calcOutput">Введите данные для расчета</div>
+            <button class="btn-ui" style="width:100%; margin-top:10px; background:#4caf50; color:white; opacity:1;" onclick="doCalc()">РАССЧИТАТЬ</button>
+            <button class="btn-ui" style="width:100%; background:#9e9e9e; color:white; opacity:1;" onclick="resetCalc()">СБРОС</button>
             <button onclick="toggleCalc(false)" style="margin-top:10px; border:none; background:none; color:#999">Закрыть</button>
         </div>
     </div>
 
+    <div id="menu-overlay">
+        <h2 style="color:#0088cc">УРОВНИ</h2>
+        <div class="levels-grid" id="levels-grid"></div>
+        <button onclick="hideMenu()" style="background:none; border:none; color:#999; margin-top:20px; font-weight:bold">Назад</button>
+    </div>
+
     <div id="game-area">
-        <div id="info-bar" style="position:absolute; top:50px; width:100%; display:flex; justify-content:center; gap:8px; z-index:50;">
-            <div id="timer-ui" style="background:#fff; padding:5px 12px; border-radius:12px; font-weight:bold;">⏳ 3.0с</div>
-            <div id="score-ui" style="background:#fff; padding:5px 12px; border-radius:12px; font-weight:bold;">🏆 0</div>
-            <div id="err-ui" style="background:#fff; padding:5px 12px; border-radius:12px; font-weight:bold;">❌ 0/5</div>
+        <div id="info-bar">
+            <div id="timer-ui" class="info-item">⏳ 3.0с</div>
+            <div id="score-ui" class="info-item">🏆 0</div>
+            <div id="err-ui" class="info-item">❌ 0/5</div>
         </div>
+        
         <div id="standard-mode" style="display:flex; height:100%; width:100%">
-            <div class="tap-zone" id="zone-left" onclick="handleInput('left')"><span style="opacity:0.15; font-size:26px; font-weight:bold">МУХИ</span></div>
-            <div class="tap-zone" id="zone-right" onclick="handleInput('right')"><span style="opacity:0.15; font-size:26px; font-weight:bold">КОТЛЕТЫ</span></div>
-            <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); pointer-events:none;"><div id="card" class="card">🍔</div></div>
+            <div class="tap-zone" id="zone-left" onclick="handleInput('left')"><div class="zone-label" id="label-left">МУХИ</div><div class="pub-label" id="pub-left">🍺 ПИВНУШКА</div></div>
+            <div class="tap-zone" id="zone-right" onclick="handleInput('right')"><div class="zone-label" id="label-right">КОТЛЕТЫ</div><div class="pub-label" id="pub-right">🍺 ПИВНУШКА</div></div>
+            <div class="card-container"><div id="card" class="card">🍔</div></div>
+        </div>
+
+        <div id="runner-mode">
+            <div class="lane"></div><div class="lane"></div><div class="lane"></div>
+            <div id="player-fly">🪰</div>
         </div>
     </div>
 
     <div id="finish-overlay" class="overlay">
         <div id="finish-content"></div>
-        <button class="btn-ui" style="opacity:1" onclick="showMenu()">ПРОДОЛЖИТЬ</button>
+        <button class="btn-ui" style="opacity:1" onclick="showMenu()">МЕНЮ</button>
     </div>
 
-    <audio id="snd-success" src="success.mp3"></audio>
-    <audio id="snd-error" src="error.mp3"></audio>
-    <audio id="snd-error-big" src="error1.mp3"></audio>
-    <audio id="snd-ivan" src="ivan.mp3"></audio>
-    <audio id="snd-win" src="win.mp3"></audio>
-    <audio id="snd-lose" src="lose.mp3"></audio>
+    <audio id="snd-success" src="success.mp3" preload="auto"></audio>
+    <audio id="snd-error" src="error.mp3" preload="auto"></audio>
+    <audio id="snd-error-big" src="error1.mp3" preload="auto"></audio>
+    <audio id="snd-ivan" src="ivan.mp3" preload="auto"></audio>
+    <audio id="snd-win" src="win.mp3" preload="auto"></audio>
+    <audio id="snd-lose" src="lose.mp3" preload="auto"></audio>
 
     <script>
         const tg = window.Telegram.WebApp;
@@ -76,103 +119,201 @@
         let globalKots = parseInt(localStorage.getItem('global_kots')) || 0;
 
         let curLvl = 1, points = 0, timeLeft = 3, errors = 0, gameActive = false, gameStarted = false;
-        let lvlKots = 0, loop, ivanPubSide = '';
+        let lvlKots = 0, totalT = 0, loop, ivanPubSide = '', runnerInt;
 
         function haptic(t) { try { if(t==='l') tg.HapticFeedback.impactOccurred('light'); if(t==='e') tg.HapticFeedback.notificationOccurred('error'); if(t==='s') tg.HapticFeedback.notificationOccurred('success'); } catch(e){} }
         function play(id) { const s = document.getElementById(id); if(s){s.currentTime=0; s.play().catch(()=>{});} }
 
+        function updateGlobalUI() {
+            document.getElementById('gs-pts').innerText = globalPts.toFixed(1);
+            document.getElementById('gs-kots').innerText = globalKots;
+        }
+        updateGlobalUI();
+
+        // ФУНКЦИЯ СКЛОНЕНИЙ
         function plural(n, forms) {
-            let res = (n % 10 == 1 && n % 100 != 11 ? forms[0] : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 10 || n % 100 >= 20) ? forms[1] : forms[2]));
-            return n + ' ' + res;
+            let n1 = Math.abs(n) % 100;
+            let n2 = n1 % 10;
+            if (n1 > 10 && n1 < 20) return n + ' ' + forms[2];
+            if (n2 > 1 && n2 < 5) return n + ' ' + forms[1];
+            if (n2 == 1) return n + ' ' + forms[0];
+            return n + ' ' + forms[2];
         }
 
+        // КАЛЬКУЛЯТОР
+        function toggleCalc(s) { document.getElementById('calc-overlay').style.display = s ? 'flex' : 'none'; }
+        function resetCalc() { document.getElementById('calcA').value=''; document.getElementById('calcB').value=''; document.getElementById('calcD').value=''; document.getElementById('calcOutput').innerText='Очищено'; }
         function doCalc() {
             let a = parseInt(document.getElementById('calcA').value), b = parseInt(document.getElementById('calcB').value), n = document.getElementById('calcD').value;
             let out = document.getElementById('calcOutput');
-            if(!a || !b || !n) { out.innerText = "Заполни поля!"; return; }
-            if(n.toLowerCase().startsWith('гал')) { out.innerText = `Ты в отпуске перегрелась, ${n}, мухи отдельно, котлеты отдельно!`; return; }
-            let mCount = Math.floor(85/0.014 * 18 * b * a);
-            let kCount = Math.floor(mCount / 6071);
+            if(!a || !b || !n) { out.innerText = "Заполни все поля!"; return; }
+            let nl = n.toLowerCase();
+            if(nl.startsWith('гал')) { out.innerText = `Ты в отпуске перегрелась, ${n}, мухи отдельно, котлеты отдельно!`; return; }
+            if(nl.includes('никит')) { out.innerText = `На хуй пошёл, ${n}, говна поешь!`; return; }
             
-            let sM = plural(mCount, ['муха', 'мухи', 'мух']);
+            let mTotal = Math.floor(85/0.014 * 18 * b * a);
+            let kTotal = Math.floor(mTotal / 6071);
+            
+            let sM = plural(mTotal, ['муха', 'мухи', 'мух']);
             let sP = plural(a, ['человека', 'человек', 'человек']);
             let sD = plural(b, ['день', 'дня', 'дней']);
-            let sK = plural(kCount, ['котлета', 'котлеты', 'котлет']);
+            let sK = plural(kTotal, ['котлета', 'котлеты', 'котлет']);
 
             out.innerText = `Потребуется ${sM}, чтобы накормить ${sP} на ${sD}. И кстати, ${n}, это будет ${sK}.`;
         }
 
+        // МЕНЮ
         function showMenu() {
             document.getElementById('splash-screen').style.display = 'none';
             document.getElementById('finish-overlay').style.display = 'none';
             document.getElementById('game-area').style.display = 'none';
-            // Логика отрисовки кнопок уровней... (пропущено для краткости, аналогично прошлому коду)
-            location.reload(); // Для простоты сброса при возврате
+            document.getElementById('menu-overlay').style.display = 'flex';
+            const grid = document.getElementById('levels-grid'); grid.innerHTML = '';
+            for(let i=1; i<=10; i++) {
+                let c = document.createElement('div');
+                c.className = `level-card ${i<=unlocked ? 'open' : ''}`;
+                c.innerText = i + (i>unlocked ? ' 🔒' : '');
+                c.onclick = () => { if(i<=unlocked) { if(i<=3) startLvl(i); else alert("Скоро выйдет!"); } };
+                grid.appendChild(c);
+            }
         }
+        function hideMenu() { document.getElementById('menu-overlay').style.display = 'none'; document.getElementById('splash-screen').style.display = 'flex'; }
 
+        // ИГРОВАЯ ЛОГИКА
         function startLvl(lvl) {
-            curLvl = lvl; points = 0; timeLeft = 3; errors = 0; lvlKots = 0; gameActive = true; gameStarted = false;
-            document.getElementById('splash-screen').style.display = 'none';
+            curLvl = lvl; points = 0; timeLeft = 3; errors = 0; lvlKots = 0; totalT = 0; gameActive = true; gameStarted = false;
+            document.getElementById('menu-overlay').style.display = 'none';
             document.getElementById('game-area').style.display = 'block';
-            nextItem();
+            document.getElementById('timer-ui').innerText = `⏳ 3.0с`;
+            document.getElementById('score-ui').innerText = `🏆 0`;
+            document.getElementById('err-ui').innerText = `❌ 0/5`;
+            if(lvl === 3) initRunner(); else {
+                document.getElementById('standard-mode').style.display = 'flex';
+                document.getElementById('runner-mode').style.display = 'none';
+                nextItem();
+            }
         }
 
         function nextItem() {
-            const c = document.getElementById('card');
-            let flyChance = curLvl === 2 ? 0.21 : 0.08; // Частота мух во 2 уровне выше на ~13%
+            const c = document.getElementById('card'); c.className = 'card';
+            resetZones();
+            // На 2 уровне частота мух/ивана выше на 13% (базовая 0.08 -> 0.21)
+            let flyChance = curLvl === 2 ? 0.21 : 0.08;
             if(Math.random() < flyChance) {
-                // Шанс Ивана или Мухи
-                if(Math.random() < 0.2) { curEmoji = 'ivan'; c.innerText = '😷'; play('snd-ivan'); }
-                else { curEmoji = 'fly'; c.innerText = '🪰'; }
+                if(Math.random() < 0.2) { 
+                    curEmoji = 'ivan'; c.innerText = '😷'; play('snd-ivan');
+                    ivanPubSide = Math.random() > 0.5 ? 'left' : 'right';
+                    document.getElementById('label-'+ivanPubSide).style.display = 'none';
+                    document.getElementById('pub-'+ivanPubSide).style.display = 'block';
+                    document.getElementById('zone-'+ivanPubSide).style.background = '#6d4c41';
+                } else { curEmoji = 'fly'; c.innerText = '🪰'; }
             } else { curEmoji = 'cutlet'; c.innerText = '🍔'; }
+        }
+
+        function resetZones() {
+            document.querySelectorAll('.zone-label').forEach(el=>el.style.display='block');
+            document.querySelectorAll('.pub-label').forEach(el=>el.style.display='none');
+            document.getElementById('zone-left').style.background = '#ffdde1';
+            document.getElementById('zone-right').style.background = '#d1e8ff';
         }
 
         function handleInput(side) {
             if(!gameActive) return;
-            if(!gameStarted) {
+            if(!gameStarted && curLvl !== 3) {
                 gameStarted = true;
-                const dec = curLvl === 2 ? 1.4 : 1.0;
+                const decSpeed = curLvl === 2 ? 1.4 : 1.0; 
                 loop = setInterval(() => {
-                    timeLeft -= (0.1 * dec);
+                    timeLeft -= (0.1 * decSpeed); totalT += 0.1;
                     document.getElementById('timer-ui').innerText = `⏳ ${Math.max(0, timeLeft).toFixed(1)}с`;
                     if(timeLeft <= 0) endGame('time');
                 }, 100);
             }
-
-            const correct = (side === 'right' && curEmoji === 'cutlet') || (side === 'left' && curEmoji === 'fly');
-            if(correct) {
-                timeLeft += (curLvl === 2 ? 0.8 : 1.0);
-                if(curEmoji === 'cutlet') { points += 1; lvlKots++; }
-                play('snd-success'); haptic('l');
-            } else {
-                errors++;
-                if(curEmoji === 'fly') points -= 0.5;
-                if(errors >= 5 && points < 0) { endGame('fatal'); return; }
-                play('snd-error'); haptic('e');
-            }
-
-            document.getElementById('score-ui').innerText = `🏆 ${points}`;
-            document.getElementById('err-ui').innerText = `❌ ${errors}/5`;
             
-            let target = curLvl === 1 ? 20 : 15;
-            if(points >= target) endGame('win'); else nextItem();
+            if(curLvl === 3) {
+                if(side === 'left') pLane = Math.max(0, pLane-1); else pLane = Math.min(2, pLane+1);
+                updateFly(); haptic('l');
+            } else {
+                const correct = (side === 'right' && curEmoji === 'cutlet') || (side === 'left' && curEmoji === 'fly');
+                document.getElementById('card').classList.add(side==='left'?'fly-left':'fly-right');
+                
+                if(curEmoji === 'ivan') {
+                    if(side === ivanPubSide) { points += 5; haptic('s'); play('snd-success'); }
+                    else { endGame('ivan'); return; }
+                } else if(correct) {
+                    // Бонус времени: Ур1 = +1.0, Ур2 = +0.8
+                    timeLeft += (curLvl === 2 ? 0.8 : 1.0);
+                    if(curEmoji === 'cutlet') { points += 1; lvlKots++; }
+                    haptic('l'); play('snd-success');
+                } else {
+                    errors++;
+                    if(curEmoji === 'fly') points -= 0.5;
+                    haptic('e'); 
+                    if(errors >= 5 && points < 0) { endGame('fatal'); return; }
+                    play(errors >= 5 ? 'snd-error-big' : 'snd-error');
+                }
+                document.getElementById('score-ui').innerText = `🏆 ${points.toFixed(1)}`;
+                document.getElementById('err-ui').innerText = `❌ ${errors}/5`;
+                
+                let target = curLvl === 1 ? 20 : 15;
+                if(points >= target) endGame('win'); else setTimeout(nextItem, 200);
+            }
         }
 
+        // РАННЕР (УРОВЕНЬ 3)
+        let pLane = 1, rSpeed = 5;
+        function initRunner() {
+            document.getElementById('standard-mode').style.display = 'none';
+            document.getElementById('runner-mode').style.display = 'block';
+            pLane = 1; rSpeed = 5; updateFly(); gameStarted = true;
+            loop = setInterval(() => { totalT += 0.1; rSpeed += 0.005; }, 100);
+            runnerInt = setInterval(spawn, 900);
+        }
+        function updateFly() { document.getElementById('player-fly').style.left = (16.6 + pLane * 33.3) + '%'; }
+        function spawn() {
+            if(!gameActive) return;
+            let lIdx = Math.floor(Math.random()*3), isE = Math.random() > 0.65;
+            let item = document.createElement('div');
+            item.className = 'falling-item'; item.innerText = isE ? '🧹' : '🍔';
+            document.querySelectorAll('.lane')[lIdx].appendChild(item);
+            let y = -100;
+            let m = setInterval(() => {
+                if(!gameActive){ item.remove(); clearInterval(m); return; }
+                y += rSpeed; item.style.top = y + 'px';
+                if(y > window.innerHeight/2-40 && y < window.innerHeight/2+40 && lIdx === pLane) {
+                    clearInterval(m); item.remove();
+                    if(isE) endGame('hit'); else { points++; lvlKots++; haptic('l'); play('snd-success'); }
+                    document.getElementById('score-ui').innerText = `🏆 ${points}`;
+                }
+                if(y > window.innerHeight) { clearInterval(m); item.remove(); }
+            }, 20);
+        }
+
+        // КОНЕЦ ИГРЫ
         function endGame(r) {
-            gameActive = false; clearInterval(loop);
-            let win = r === 'win';
+            gameActive = false; gameStarted = false;
+            clearInterval(loop); if(runnerInt) clearInterval(runnerInt);
+            let win = r === 'win' || (curLvl === 3 && points >= 15);
             if(win) {
+                if(curLvl === unlocked) unlocked++;
+                localStorage.setItem('unlocked_v6', unlocked);
                 globalPts += points; globalKots += lvlKots;
                 localStorage.setItem('global_pts', globalPts);
                 localStorage.setItem('global_kots', globalKots);
-                play('snd-win'); haptic('s');
+                updateGlobalUI(); play('snd-win'); haptic('s');
             } else { play('snd-lose'); haptic('e'); }
+            
+            let msg = r === 'fatal' ? "ФАТАЛЬНАЯ ОШИБКА: Минус в баллах!" : (win ? "ПОБЕДА!" : "ПРОИГРЫШ");
+            document.getElementById('finish-content').innerHTML = `<h1>${msg}</h1><p>Котлет собрано: ${lvlKots}</p><p>Баллов: ${points.toFixed(1)}</p>`;
             document.getElementById('finish-overlay').style.display = 'flex';
-            document.getElementById('finish-content').innerHTML = `<h1>${win?'ПОБЕДА!':'КОНЕЦ'}</h1><p>Счёт: ${points}</p>`;
         }
 
-        function toggleCalc(s) { document.getElementById('calc-overlay').style.display = s ? 'flex' : 'none'; }
-        function resetCalc() { document.getElementById('calcA').value=''; document.getElementById('calcB').value=''; document.getElementById('calcD').value=''; document.getElementById('calcOutput').innerText='Очищено'; }
+        // УПРАВЛЕНИЕ
+        document.addEventListener('keydown', e => { if(e.key === 'ArrowLeft') handleInput('left'); if(e.key === 'ArrowRight') handleInput('right'); });
+        document.addEventListener('touchstart', e => this.tx = e.touches[0].clientX);
+        document.addEventListener('touchend', e => {
+            let d = e.changedTouches[0].clientX - this.tx;
+            if(Math.abs(d) > 40) handleInput(d < 0 ? 'left' : 'right');
+        });
     </script>
 </body>
 </html>
