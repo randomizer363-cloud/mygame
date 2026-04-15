@@ -8,7 +8,6 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
         
-        /* ГЛАВНЫЙ ЭКРАН */
         #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #bg-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
         
@@ -17,24 +16,21 @@
         .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; background: rgba(0, 136, 204, 0.35); backdrop-filter: blur(8px); margin-bottom: 12px; width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
         .btn-calc { background: rgba(76, 175, 80, 0.35); }
 
-        /* КАЛЬКУЛЯТОР */
         #calc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
         .calc-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 20px; text-align: center; color: #333; }
         .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
         #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 12px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
 
-        /* МЕНЮ */
         #menu-overlay { position: fixed; inset: 0; background: #fff; z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 20px; }
         .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 85%; }
         .level-card { height: 65px; background: #eee; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #aaa; transition: 0.2s; }
         .level-card.open { background: #0088cc; color: white; }
 
-        /* ИГРА */
         #game-area { position: relative; width: 100%; height: 100%; display: none; overflow: hidden; background: #fff; }
         .tap-zone { width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #zone-left { background: #ffdde1; } #zone-right { background: #d1e8ff; }
         .zone-label { font-weight: bold; opacity: 0.15; font-size: 26px; pointer-events: none; }
-        .pub-label { color: #ffeb3b; font-weight: 900; font-size: 22px; display: none; text-shadow: 1px 1px 2px #000; position: absolute; }
+        .pub-label { color: #ffeb3b; font-weight: 900; font-size: 22px; display: none; text-shadow: 1px 1px 2px #000; position: absolute; pointer-events: none; }
 
         .card-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
         .card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); transition: 0.3s cubic-bezier(0.18, 0.89, 0.32, 1.28); }
@@ -67,9 +63,9 @@
             <input type="number" id="calcA" class="calc-input" placeholder="Количество человек">
             <input type="number" id="calcB" class="calc-input" placeholder="Количество дней">
             <input type="text" id="calcD" class="calc-input" placeholder="Ваше имя">
-            <div id="calcOutput">Введите данные для расчета</div>
-            <button class="btn-ui" style="width:100%; margin-top:10px; background:#4caf50; color:white; opacity:1;" onclick="doCalc()">РАССЧИТАТЬ</button>
-            <button class="btn-ui" style="width:100%; background:#9e9e9e; color:white; opacity:1;" onclick="resetCalc()">СБРОС</button>
+            <div id="calcOutput">Введите данные...</div>
+            <button class="btn-ui" style="width:100%; margin-top:10px; background:#4caf50; opacity:1;" onclick="doCalc()">РАССЧИТАТЬ</button>
+            <button class="btn-ui" style="width:100%; background:#9e9e9e; opacity:1;" onclick="resetCalc()">СБРОС</button>
             <button onclick="toggleCalc(false)" style="margin-top:10px; border:none; background:none; color:#999">Закрыть</button>
         </div>
     </div>
@@ -87,8 +83,14 @@
             <div id="err-ui" class="info-item">❌ 0/5</div>
         </div>
         <div id="standard-mode" style="display:flex; height:100%; width:100%">
-            <div class="tap-zone" id="zone-left" onclick="handleInput('left')"><div class="zone-label">МУХИ</div><div class="pub-label" id="pub-left">🍺 ПИВНУШКА</div></div>
-            <div class="tap-zone" id="zone-right" onclick="handleInput('right')"><div class="zone-label">КОТЛЕТЫ</div><div class="pub-label" id="pub-right">🍺 ПИВНУШКА</div></div>
+            <div class="tap-zone" id="zone-left" onclick="handleInput('left')">
+                <div class="zone-label" id="label-left">МУХИ</div>
+                <div class="pub-label" id="pub-left">🍺 ПИВНУШКА</div>
+            </div>
+            <div class="tap-zone" id="zone-right" onclick="handleInput('right')">
+                <div class="zone-label" id="label-right">КОТЛЕТЫ</div>
+                <div class="pub-label" id="pub-right">🍺 ПИВНУШКА</div>
+            </div>
             <div class="card-container"><div id="card" class="card">🍔</div></div>
         </div>
         <div id="runner-mode">
@@ -116,20 +118,20 @@
         let globalKots = parseInt(localStorage.getItem('global_kots')) || 0;
 
         let curLvl = 1, points = 0, timeLeft = 3, errors = 0, gameActive = false, gameStarted = false;
-        let lvlKots = 0, totalT = 0, loop, ivanPubSide = '', runnerInt, curEmoji = '';
+        let lvlKots = 0, loop, ivanPubSide = '', runnerInt, curEmoji = '';
 
         function haptic(t) { 
             try { 
-                if(t==='m') tg.HapticFeedback.impactOccurred('medium'); // Усилено для обычных ходов
-                if(t==='e') tg.HapticFeedback.notificationOccurred('error'); // Для серии ошибок
-                if(t==='h') tg.HapticFeedback.impactOccurred('heavy'); // Сильное вибро для промаха
+                if(t==='m') tg.HapticFeedback.impactOccurred('medium'); 
+                if(t==='e') tg.HapticFeedback.notificationOccurred('error'); 
+                if(t==='h') tg.HapticFeedback.impactOccurred('heavy'); 
                 if(t==='s') tg.HapticFeedback.notificationOccurred('success'); 
             } catch(e){} 
         }
         function play(id) { const s = document.getElementById(id); if(s){s.currentTime=0; s.play().catch(()=>{});} }
 
         function updateGlobalUI() {
-            document.getElementById('gs-pts').innerText = globalPts.toFixed(1);
+            document.getElementById('gs-pts').innerText = globalPts.toFixed(2);
             document.getElementById('gs-kots').innerText = globalKots;
         }
         updateGlobalUI();
@@ -202,6 +204,8 @@
         function resetZones() {
             document.getElementById('zone-left').style.background = '#ffdde1';
             document.getElementById('zone-right').style.background = '#d1e8ff';
+            document.getElementById('label-left').style.display = 'block';
+            document.getElementById('label-right').style.display = 'block';
             document.getElementById('pub-left').style.display = 'none';
             document.getElementById('pub-right').style.display = 'none';
         }
@@ -214,7 +218,14 @@
                 loop = setInterval(() => {
                     timeLeft -= (0.1 * decSpeed);
                     document.getElementById('timer-ui').innerText = `⏳ ${Math.max(0, timeLeft).toFixed(1)}с`;
-                    if(timeLeft <= 0) endGame('time');
+                    if(timeLeft <= 0) {
+                        if(curEmoji === 'ivan') {
+                            alert("Иван не успел купить пиво и украл все котлеты");
+                            endGame('ivan');
+                        } else {
+                            endGame('time');
+                        }
+                    }
                 }, 100);
             }
             
@@ -226,18 +237,21 @@
                 document.getElementById('card').classList.add(side==='left'?'fly-left':'fly-right');
                 
                 if(curEmoji === 'ivan') {
-                    if(side === ivanPubSide) { points += 5; haptic('s'); play('snd-success'); }
-                    else { endGame('ivan'); return; }
+                    if(side === ivanPubSide) { 
+                        alert("Иван успел купить пиво - котлеты в безопасности");
+                        points += 5; haptic('s'); play('snd-success'); 
+                    } else { 
+                        alert("Иван не успел купить пиво и украл все котлеты");
+                        endGame('ivan'); return; 
+                    }
                 } else if(correct) {
                     timeLeft += (curLvl === 2 ? 0.8 : 1.0);
                     if(curEmoji === 'cutlet') { points += 1; lvlKots++; }
                     haptic('m'); play('snd-success');
                 } else {
                     errors++;
-                    // ШТРАФЫ: за муху -0.5, за котлету (бургер) -0.25
                     points -= (curEmoji === 'fly' ? 0.5 : 0.25);
                     haptic('h'); 
-                    
                     if(errors % 5 === 0) {
                         alert("ОШИБКА!");
                         play('snd-error-big');
@@ -254,7 +268,6 @@
             }
         }
 
-        // РАННЕР (УРОВЕНЬ 3)
         let pLane = 1, rSpeed = 5;
         function initRunner() {
             document.getElementById('standard-mode').style.display = 'none';
@@ -296,7 +309,9 @@
                 updateGlobalUI(); play('snd-win'); haptic('s');
             } else { play('snd-lose'); haptic('e'); }
             
-            let msg = r === 'fatal' ? "ФАТАЛЬНАЯ ОШИБКА: Баланс котлет отрицательный!" : (win ? "ПОБЕДА!" : "ПРОИГРЫШ");
+            let msg = r === 'fatal' ? "ФАТАЛЬНАЯ ОШИБКА: Котлеты закончились!" : (win ? "ПОБЕДА!" : "ПРОИГРЫШ");
+            if(r === 'ivan') msg = "ИВАН УКРАЛ КОТЛЕТЫ!";
+            
             document.getElementById('finish-content').innerHTML = `<h1>${msg}</h1><p>Котлет собрано: ${lvlKots}</p><p>Баллов: ${points.toFixed(2)}</p>`;
             document.getElementById('finish-overlay').style.display = 'flex';
         }
