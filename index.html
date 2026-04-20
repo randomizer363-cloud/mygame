@@ -8,27 +8,32 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
         
-        #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 40px; }
-        #bg-logo { width: 90%; height: auto; object-fit: contain; z-index: -1; margin-bottom: 20px; }
+        /* ГЛАВНЫЙ ЭКРАН - ВОЗВРАТ СТИЛЕЙ */
+        #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #bg-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
         
-        #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); width: 60%; margin-bottom: 50px; }
+        #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
 
-        .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; backdrop-filter: blur(8px); width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .btn-play { background: rgba(0, 136, 204, 0.17); margin-bottom: auto; }
-        .btn-calc { background: rgba(76, 175, 80, 0.35); margin-bottom: 60px; }
+        .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; background: rgba(0, 136, 204, 0.35); backdrop-filter: blur(8px); margin-bottom: 12px; width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .btn-play { background: rgba(0, 136, 204, 0.17); } /* Прозрачность 50% сохранена как просили ранее */
+        .btn-calc { background: rgba(76, 175, 80, 0.35); }
 
-        #sound-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 500; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; color: white; cursor: pointer; backdrop-filter: blur(5px); }
+        /* Кнопка звука */
+        #sound-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 500; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; color: white; cursor: pointer; backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; }
 
+        /* КАЛЬКУЛЯТОР */
         #calc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
         .calc-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 20px; text-align: center; color: #333; }
         .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
         #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 12px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
 
+        /* МЕНЮ */
         #menu-overlay { position: fixed; inset: 0; background: #fff; z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 20px; }
         .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 85%; }
         .level-card { height: 65px; background: #eee; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: bold; color: #aaa; transition: 0.2s; }
         .level-card.open { background: #0088cc; color: white; }
 
+        /* ИГРА */
         #game-area { position: relative; width: 100%; height: 100%; display: none; overflow: hidden; background: #fff; }
         .tap-zone { width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         #zone-left { background: #ffdde1; } #zone-right { background: #d1e8ff; }
@@ -56,8 +61,8 @@
     <button id="sound-toggle" onclick="toggleMute()">🔊</button>
 
     <div id="splash-screen">
-        <div id="global-stats">🏆 Баллы: <span id="gs-pts">0</span> | 🍔 Котлеты: <span id="gs-kots">0</span></div>
         <img src="logo.jpg" id="bg-logo">
+        <div id="global-stats">🏆 Баллы: <span id="gs-pts">0</span> | 🍔 Котлеты: <span id="gs-kots">0</span></div>
         <button class="btn-ui btn-play" onclick="showMenu()">ИГРАТЬ</button>
         <button class="btn-ui btn-calc" onclick="toggleCalc(true)">🧮 КАЛЬКУЛЯТОР</button>
     </div>
@@ -134,7 +139,7 @@
                 bg.pause();
                 document.getElementById('sound-toggle').innerText = '🔇';
             } else {
-                bg.play();
+                bg.play().catch(()=>{});
                 document.getElementById('sound-toggle').innerText = '🔊';
             }
         }
@@ -184,7 +189,7 @@
         function toggleCalc(s) { document.getElementById('calc-overlay').style.display = s ? 'flex' : 'none'; }
 
         function showMenu() {
-            if (!isMuted) document.getElementById('snd-bg').play();
+            if (!isMuted) document.getElementById('snd-bg').play().catch(()=>{});
             document.getElementById('splash-screen').style.display = 'none';
             document.getElementById('finish-overlay').style.display = 'none';
             document.getElementById('game-area').style.display = 'none';
@@ -217,8 +222,8 @@
         function nextItem() {
             const c = document.getElementById('card'); c.className = 'card';
             resetZones();
-            // Сложность 1: Частота котлет снижена на 30%
-            let flyChance = curLvl === 2 ? 0.21 : (curLvl === 1 ? 0.35 : 0.08); 
+            // На 1 уровне шанс мухи выше на 30% (котлеты реже)
+            let flyChance = curLvl === 1 ? 0.38 : (curLvl === 2 ? 0.21 : 0.08); 
             
             if(Math.random() < flyChance) {
                 if(Math.random() < 0.2) { 
