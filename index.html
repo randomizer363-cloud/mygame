@@ -8,13 +8,16 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
         
-        #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #bg-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
+        #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding-top: 40px; }
+        #bg-logo { width: 90%; height: auto; object-fit: contain; z-index: -1; margin-bottom: 20px; }
         
-        #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
+        #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); width: 60%; margin-bottom: 50px; }
 
-        .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; background: rgba(0, 136, 204, 0.35); backdrop-filter: blur(8px); margin-bottom: 12px; width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        .btn-calc { background: rgba(76, 175, 80, 0.35); }
+        .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; backdrop-filter: blur(8px); width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        .btn-play { background: rgba(0, 136, 204, 0.17); margin-bottom: auto; }
+        .btn-calc { background: rgba(76, 175, 80, 0.35); margin-bottom: 60px; }
+
+        #sound-toggle { position: fixed; bottom: 20px; right: 20px; z-index: 500; background: rgba(255,255,255,0.2); border: none; border-radius: 50%; width: 50px; height: 50px; font-size: 24px; color: white; cursor: pointer; backdrop-filter: blur(5px); }
 
         #calc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
         .calc-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 20px; text-align: center; color: #333; }
@@ -50,10 +53,12 @@
 </head>
 <body>
 
+    <button id="sound-toggle" onclick="toggleMute()">🔊</button>
+
     <div id="splash-screen">
-        <img src="logo.jpg" id="bg-logo">
         <div id="global-stats">🏆 Баллы: <span id="gs-pts">0</span> | 🍔 Котлеты: <span id="gs-kots">0</span></div>
-        <button class="btn-ui" onclick="showMenu()">ИГРАТЬ</button>
+        <img src="logo.jpg" id="bg-logo">
+        <button class="btn-ui btn-play" onclick="showMenu()">ИГРАТЬ</button>
         <button class="btn-ui btn-calc" onclick="toggleCalc(true)">🧮 КАЛЬКУЛЯТОР</button>
     </div>
 
@@ -104,6 +109,7 @@
         <button class="btn-ui" style="opacity:1" onclick="showMenu()">МЕНЮ</button>
     </div>
 
+    <audio id="snd-bg" src="Astronomia.mp3" loop></audio>
     <audio id="snd-success" src="success.mp3"></audio>
     <audio id="snd-error" src="error.mp3"></audio>
     <audio id="snd-error-big" src="error1.mp3"></audio>
@@ -116,9 +122,22 @@
         let unlocked = parseInt(localStorage.getItem('unlocked_v6')) || 1;
         let globalPts = parseFloat(localStorage.getItem('global_pts')) || 0;
         let globalKots = parseInt(localStorage.getItem('global_kots')) || 0;
+        let isMuted = false;
 
         let curLvl = 1, points = 0, timeLeft = 3, errors = 0, gameActive = false, gameStarted = false;
         let lvlKots = 0, loop, ivanPubSide = '', runnerInt, curEmoji = '';
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const bg = document.getElementById('snd-bg');
+            if (isMuted) {
+                bg.pause();
+                document.getElementById('sound-toggle').innerText = '🔇';
+            } else {
+                bg.play();
+                document.getElementById('sound-toggle').innerText = '🔊';
+            }
+        }
 
         function haptic(t) { 
             try { 
@@ -128,7 +147,12 @@
                 if(t==='s') tg.HapticFeedback.notificationOccurred('success'); 
             } catch(e){} 
         }
-        function play(id) { const s = document.getElementById(id); if(s){s.currentTime=0; s.play().catch(()=>{});} }
+
+        function play(id) { 
+            if (isMuted) return;
+            const s = document.getElementById(id); 
+            if(s){s.currentTime=0; s.play().catch(()=>{});} 
+        }
 
         function updateGlobalUI() {
             document.getElementById('gs-pts').innerText = globalPts.toFixed(2);
@@ -148,7 +172,10 @@
             let a = parseInt(document.getElementById('calcA').value), b = parseInt(document.getElementById('calcB').value), n = document.getElementById('calcD').value;
             let out = document.getElementById('calcOutput');
             if(!a || !b || !n) { out.innerText = "Заполни все поля!"; return; }
-            if(n.toLowerCase().startsWith('гал')) { out.innerText = `Ты в отпуске перегрелась, ${n}, мухи отдельно, котлеты отдельно!`; return; }
+            let nl = n.toLowerCase();
+            if(nl.startsWith('гал')) { out.innerText = `Ты в отпуске перегрелась, ${n}, мухи отдельно, котлеты отдельно!`; return; }
+            if(nl.includes('никит')) { out.innerText = `На хуй пошёл, ${n}, говна поешь!`; return; }
+            
             let mTotal = Math.floor(85/0.014 * 18 * b * a);
             let kTotal = Math.floor(mTotal / 6071);
             out.innerText = `Потребуется ${plural(mTotal,['муха','мухи','мух'])}, чтобы накормить ${plural(a,['человека','человек','человек'])} на ${plural(b,['день','дня','дней'])}. И кстати, ${n}, это будет ${plural(kTotal,['котлета','котлеты','котлет'])}.`;
@@ -157,6 +184,7 @@
         function toggleCalc(s) { document.getElementById('calc-overlay').style.display = s ? 'flex' : 'none'; }
 
         function showMenu() {
+            if (!isMuted) document.getElementById('snd-bg').play();
             document.getElementById('splash-screen').style.display = 'none';
             document.getElementById('finish-overlay').style.display = 'none';
             document.getElementById('game-area').style.display = 'none';
@@ -189,7 +217,9 @@
         function nextItem() {
             const c = document.getElementById('card'); c.className = 'card';
             resetZones();
-            let flyChance = curLvl === 2 ? 0.21 : 0.08;
+            // Сложность 1: Частота котлет снижена на 30%
+            let flyChance = curLvl === 2 ? 0.21 : (curLvl === 1 ? 0.35 : 0.08); 
+            
             if(Math.random() < flyChance) {
                 if(Math.random() < 0.2) { 
                     curEmoji = 'ivan'; c.innerText = '😷'; play('snd-ivan');
@@ -222,9 +252,7 @@
                         if(curEmoji === 'ivan') {
                             alert("Иван не успел купить пиво и украл все котлеты");
                             endGame('ivan');
-                        } else {
-                            endGame('time');
-                        }
+                        } else { endGame('time'); }
                     }
                 }, 100);
             }
@@ -256,15 +284,13 @@
                         alert("ОШИБКА!");
                         play('snd-error-big');
                         if(points < 0) { endGame('fatal'); return; }
-                    } else {
-                        play('snd-error');
-                    }
+                    } else { play('snd-error'); }
                 }
                 document.getElementById('score-ui').innerText = `🏆 ${points.toFixed(2)}`;
                 document.getElementById('err-ui').innerText = `❌ ${errors}/5`;
                 
-                let target = curLvl === 1 ? 20 : 15;
-                if(points >= target) endGame('win'); else setTimeout(nextItem, 200);
+                let target = curLvl === 1 ? 50 : (curLvl === 2 ? 30 : 15);
+                if(lvlKots >= target) endGame('win'); else setTimeout(nextItem, 200);
             }
         }
 
@@ -291,6 +317,7 @@
                     clearInterval(m); item.remove();
                     if(isE) endGame('hit'); else { points++; lvlKots++; haptic('m'); play('snd-success'); }
                     document.getElementById('score-ui').innerText = `🏆 ${points}`;
+                    if(lvlKots >= 100 && curLvl === 3) endGame('win');
                 }
                 if(y > window.innerHeight) { clearInterval(m); item.remove(); }
             }, 20);
@@ -299,7 +326,7 @@
         function endGame(r) {
             gameActive = false; gameStarted = false;
             clearInterval(loop); if(runnerInt) clearInterval(runnerInt);
-            let win = r === 'win' || (curLvl === 3 && points >= 15);
+            let win = r === 'win';
             if(win) {
                 if(curLvl === unlocked) unlocked++;
                 localStorage.setItem('unlocked_v6', unlocked);
@@ -309,7 +336,9 @@
                 updateGlobalUI(); play('snd-win'); haptic('s');
             } else { play('snd-lose'); haptic('e'); }
             
-            let msg = r === 'fatal' ? "ФАТАЛЬНАЯ ОШИБКА: Котлеты закончились!" : (win ? "ПОБЕДА!" : "ПРОИГРЫШ");
+            let msg = win ? "ПОБЕДА!" : "ПРОИГРЫШ";
+            if(win && curLvl === 3) msg = "ВЫ СДЕЛАЛИ ИЗ МУХИ СЛОНА!";
+            if(r === 'fatal') msg = "ФАТАЛЬНАЯ ОШИБКА!";
             if(r === 'ivan') msg = "ИВАН УКРАЛ КОТЛЕТЫ!";
             
             document.getElementById('finish-content').innerHTML = `<h1>${msg}</h1><p>Котлет собрано: ${lvlKots}</p><p>Баллов: ${points.toFixed(2)}</p>`;
