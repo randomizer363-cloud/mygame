@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>МухиVSКотлеты: Ultimate</title>
+    <title>МухиVSКотлеты: Клавиатура Edition</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
@@ -20,7 +20,7 @@
         #calc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
         .calc-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 20px; text-align: center; color: #333; }
         .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; outline: none; }
-        #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 12px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; line-height: 1.4; }
+        #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 12px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; }
 
         /* Меню уровней */
         #menu-overlay { position: fixed; inset: 0; background: #fff; z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 20px; overflow-y: auto; }
@@ -33,12 +33,17 @@
         #info-bar { position: absolute; top: 50px; width: 100%; display: flex; justify-content: center; gap: 8px; z-index: 50; pointer-events: none; }
         .info-item { background: rgba(255,255,255,0.9); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #eee; min-width: 65px; text-align: center; }
 
-        /* Специальные стили уровней */
         #standard-mode { display: none; height: 100%; width: 100%; }
         .tap-zone { width: 50%; height: 100%; display: flex; align-items: center; justify-content: center; position: relative; }
         .card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
         
-        #runner-mode, #elephant-mode, #field-mode, #samovar-mode, #meme-mode { position: absolute; inset: 0; display: none; }
+        /* Раннер */
+        #runner-mode { position: absolute; inset: 0; display: none; background: #f0f0f0; }
+        .runner-lane { width: 33.3%; height: 100%; float: left; border-right: 1px solid #ddd; position: relative; }
+        #player-fly { position: absolute; bottom: 80px; width: 33.3%; display: flex; justify-content: center; font-size: 50px; transition: left 0.1s ease-out; z-index: 100; }
+        .runner-item { position: absolute; left: 50%; transform: translateX(-50%); font-size: 40px; top: -50px; }
+
+        #elephant-mode, #field-mode, #samovar-mode, #meme-mode { position: absolute; inset: 0; display: none; }
         .room-item { position: absolute; cursor: pointer; user-select: none; }
         
         #samovar-mode { flex-direction: column; align-items: center; justify-content: center; background: #fffde7; }
@@ -96,26 +101,19 @@
         </div>
 
         <div id="runner-mode">
-            <div id="player-fly-runner" style="position:absolute; bottom:100px; left:50%; font-size:50px; transform:translateX(-50%); z-index:20;">🪰</div>
-            <div class="lane" style="width:33.3%; height:100%; float:left;"></div>
-            <div class="lane" style="width:33.3%; height:100%; float:left;"></div>
-            <div class="lane" style="width:33.3%; height:100%; float:left;"></div>
+            <div id="player-fly">🪰</div>
+            <div class="runner-lane" onclick="moveRunner(0)"></div>
+            <div class="runner-lane" onclick="moveRunner(1)"></div>
+            <div class="runner-lane" onclick="moveRunner(2)"></div>
         </div>
 
-        <div id="elephant-mode"></div>
-        <div id="field-mode"></div>
-        <div id="samovar-mode">
-            <div id="samovar-obj">🍯</div>
-            <div id="progress-bar"><div id="progress-fill"></div></div>
-        </div>
-
+        <div id="elephant-mode"></div><div id="field-mode"></div>
+        <div id="samovar-mode"><div id="samovar-obj">🍯</div><div id="progress-bar"><div id="progress-fill"></div></div></div>
         <div id="meme-mode">
-            <div class="meme-lane" id="ml-0"></div>
-            <div class="meme-lane" id="ml-1"></div>
-            <div class="meme-lane" id="ml-2"></div>
-            <button class="meme-btn" style="left:0" onclick="memeHit(0)">🥩 КОТЛЕТКИ</button>
-            <button class="meme-btn" style="left:33.3%" onclick="memeHit(1)">🍝 МАКАРОШКИ</button>
-            <button class="meme-btn" style="left:66.6%" onclick="memeHit(2)">🥔 ПЮРЕШКА</button>
+            <div class="meme-lane" id="ml-0"></div><div class="meme-lane" id="ml-1"></div><div class="meme-lane" id="ml-2"></div>
+            <button class="meme-btn" style="left:0" onclick="memeHit(0)">1. КОТЛЕТКИ</button>
+            <button class="meme-btn" style="left:33.3%" onclick="memeHit(1)">2. МАКАРОШКИ</button>
+            <button class="meme-btn" style="left:66.6%" onclick="memeHit(2)">3. ПЮРЕШКА</button>
         </div>
     </div>
 
@@ -129,74 +127,68 @@
     <script>
         const tg = window.Telegram.WebApp;
         let unlocked = parseInt(localStorage.getItem('unlocked_v10')) || 1;
-        let globalPts = parseFloat(localStorage.getItem('global_pts')) || 0;
-        let globalKots = parseInt(localStorage.getItem('global_kots')) || 0;
-        let isMuted = false;
+        let globalPts = 0, isMuted = false;
         let curLvl, points, timeLeft, errors, gameActive, loop, spawnInt;
-        
-        document.getElementById('snd-bg').volume = 0.5;
+        let runnerLane = 1;
 
-        function plural(n, forms) {
-            let n1 = Math.abs(n) % 100; let n2 = n1 % 10;
-            if (n1 > 10 && n1 < 20) return n + ' ' + forms[2];
-            if (n2 > 1 && n2 < 5) return n + ' ' + forms[1];
-            if (n2 == 1) return n + ' ' + forms[0];
-            return n + ' ' + forms[2];
-        }
+        // --- ОБРАБОТКА КЛАВИАТУРЫ ---
+        document.addEventListener('keydown', (e) => {
+            if (!gameActive) return;
+            // Уровни 1-2
+            if (curLvl < 3) {
+                if (e.key === "ArrowLeft") handleInput('left');
+                if (e.key === "ArrowRight") handleInput('right');
+            }
+            // Уровень 3 (Раннер)
+            if (curLvl === 3) {
+                if (e.key === "ArrowLeft") moveRunner(Math.max(0, runnerLane - 1));
+                if (e.key === "ArrowRight") moveRunner(Math.min(2, runnerLane + 1));
+            }
+            // Уровень 7 (Ритм)
+            if (curLvl === 7) {
+                if (e.key === "1") memeHit(0);
+                if (e.key === "2") memeHit(1);
+                if (e.key === "3") memeHit(2);
+            }
+        });
 
         function doCalc() {
             let a = parseInt(document.getElementById('calcA').value), b = parseInt(document.getElementById('calcB').value), n = document.getElementById('calcD').value;
             let out = document.getElementById('calcOutput');
-            if(!a || !b || !n) { out.innerText = "Заполни поля!"; return; }
+            if(!a || !b || !n) return;
             let nl = n.toLowerCase();
-            if(nl.startsWith('гал')) { out.innerText = `Ты в отпуске перегрелась, ${n}, мухи отдельно, котлеты отдельно!`; return; }
-            if(nl.includes('никит')) { out.innerText = `На хуй пошёл, ${n}, говна поешь!`; return; }
-            let mTotal = Math.floor(85/0.014 * 18 * b * a);
-            out.innerText = `Потребуется ${plural(mTotal,['муха','мухи','мух'])}, чтобы накормить ${plural(a,['человека','человек','человек'])} за ${b} дн.`;
+            if(nl.startsWith('гал')) { out.innerText = `Галка, мухи отдельно!`; return; }
+            if(nl.includes('никит')) { out.innerText = `Никита, говна поешь!`; return; }
+            out.innerText = `На ${a} чел. нужно ${a*b*150} мух.`;
         }
 
         function toggleCalc(s) { document.getElementById('calc-overlay').style.display = s ? 'flex' : 'none'; }
-
-        function toggleMute() {
-            isMuted = !isMuted;
-            const bg = document.getElementById('snd-bg');
-            if (isMuted) bg.pause(); else bg.play();
-            document.getElementById('sound-toggle').innerText = isMuted ? '🔇' : '🔊';
-        }
-
+        function toggleMute() { isMuted = !isMuted; document.getElementById('snd-bg')[isMuted?'pause':'play'](); document.getElementById('sound-toggle').innerText = isMuted ? '🔇' : '🔊'; }
         function haptic(t) { try { tg.HapticFeedback.impactOccurred(t === 'm' ? 'medium' : 'heavy'); } catch(e){} }
 
         function showMenu() {
-            if(!isMuted) document.getElementById('snd-bg').play().catch(()=>{});
             document.getElementById('splash-screen').style.display = 'none';
             document.getElementById('finish-overlay').style.display = 'none';
             document.getElementById('game-area').style.display = 'none';
             document.getElementById('menu-overlay').style.display = 'flex';
             const grid = document.getElementById('levels-grid'); grid.innerHTML = '';
-            const titles = ["1. Мухи отдельно", "2. Скорость", "3. Раннер", "4. Слон в комнате", "5. Денежка", "6. Самовар", "7. С Пюрешкой!", "8. Скоро...", "9. Скоро...", "10. Скоро..."];
             for(let i=1; i<=10; i++) {
                 let c = document.createElement('div');
                 c.className = `level-card ${i<=unlocked && i<=7 ? 'open' : ''}`;
-                c.innerText = (i<=unlocked && i<=7 ? titles[i-1] : (i > 7 ? "В разработке" : i + ' 🔒'));
+                c.innerText = i <= 7 ? (i <= unlocked ? `Уровень ${i}` : i + ' 🔒') : "В разработке";
                 c.onclick = () => { if(i<=unlocked && i<=7) startLvl(i); };
                 grid.appendChild(c);
             }
-            document.getElementById('gs-pts').innerText = globalPts.toFixed(1);
-            document.getElementById('gs-kots').innerText = globalKots;
         }
 
         function startLvl(lvl) {
-            document.getElementById('snd-bg').pause();
             curLvl = lvl; points = 0; errors = 0; gameActive = true;
             document.getElementById('game-area').style.display = 'block';
             document.getElementById('menu-overlay').style.display = 'none';
             ['standard-mode','runner-mode','elephant-mode','field-mode','samovar-mode','meme-mode'].forEach(m => document.getElementById(m).style.display = 'none');
 
-            const goals = ["50 котлет", "30 котлет", "100 метров", "15 слонов", "50 монет", "100% блеска", "100 очков ритма"];
-            alert("Задача: Собрать " + goals[lvl-1]);
-
-            if(lvl < 3) { document.getElementById('standard-mode').style.display = 'flex'; timeLeft = (lvl===1?40:25); nextItem(); }
-            else if(lvl === 3) { document.getElementById('runner-mode').style.display = 'block'; timeLeft = 50; initRunner(); }
+            if(lvl < 3) { document.getElementById('standard-mode').style.display = 'flex'; timeLeft = 30; nextItem(); }
+            else if(lvl === 3) { document.getElementById('runner-mode').style.display = 'block'; timeLeft = 45; initRunner(); }
             else if(lvl === 4) { document.getElementById('elephant-mode').style.display = 'block'; timeLeft = 40; initElephant(); }
             else if(lvl === 5) { document.getElementById('field-mode').style.display = 'block'; timeLeft = 45; initField(); }
             else if(lvl === 6) { document.getElementById('samovar-mode').style.display = 'flex'; timeLeft = 30; initSamovar(); }
@@ -204,79 +196,68 @@
             startTimer();
         }
 
-        function startTimer() {
-            clearInterval(loop);
-            loop = setInterval(() => {
-                timeLeft -= 0.1;
-                document.getElementById('timer-ui').innerText = `⏳ ${Math.max(0, timeLeft).toFixed(1)}с`;
-                if(timeLeft <= 0) endGame(points >= getTarget() ? 'win' : 'time');
-            }, 100);
-        }
-        function getTarget() { return [50, 30, 100, 15, 50, 100, 100][curLvl-1]; }
-
-        // --- УРОВЕНЬ 7 (СЛОЖНЫЙ) ---
-        function initMeme() {
-            document.getElementById('score-ui').innerText = `🍽️ 0/100`;
+        // --- УРОВЕНЬ 3: РАННЕР ---
+        function initRunner() {
+            runnerLane = 1; moveRunner(1);
             spawnInt = setInterval(() => {
                 if(!gameActive) return;
                 const lane = Math.floor(Math.random()*3);
-                const isFly = Math.random() > 0.8; // Добавляем мух-помех
+                const isKot = Math.random() > 0.4;
                 const item = document.createElement('div');
-                item.className = 'food-item';
-                item.innerText = isFly ? '🪰' : ['🥩', '🍝', '🥔'][lane];
-                item.dataset.isFly = isFly;
-                document.getElementById('ml-'+lane).appendChild(item);
-                let y = -70;
-                let speed = 6 + (points / 25); // Ускорение от прогресса
+                item.className = 'runner-item'; item.innerText = isKot ? '🍔' : '📦';
+                document.getElementsByClassName('runner-lane')[lane].appendChild(item);
+                let y = -50;
                 let m = setInterval(() => {
-                    y += speed; item.style.top = y + 'px';
-                    if(y > window.innerHeight-170 && y < window.innerHeight-90) item.dataset.hit = "true";
-                    else item.dataset.hit = "false";
-                    if(y > window.innerHeight || !gameActive) { clearInterval(m); item.remove(); }
+                    y += 7; item.style.top = y + 'px';
+                    if (y > window.innerHeight - 150 && y < window.innerHeight - 50 && lane === runnerLane) {
+                        if(isKot) { points++; haptic('m'); } else { errors++; haptic('h'); }
+                        document.getElementById('score-ui').innerText = `🏆 ${points}`;
+                        clearInterval(m); item.remove();
+                        if(points >= 50) endGame('win');
+                    }
+                    if(y > window.innerHeight) { clearInterval(m); item.remove(); }
                 }, 20);
-            }, 650); // Быстрее спавн
+            }, 700);
         }
+        function moveRunner(l) { runnerLane = l; document.getElementById('player-fly').style.left = (l * 33.3) + '%'; }
+
+        // --- ОСТАЛЬНАЯ ЛОГИКА ---
+        function initMeme() { spawnInt = setInterval(() => {
+            const lane = Math.floor(Math.random()*3); const fly = Math.random()>0.8;
+            const item = document.createElement('div'); item.className = 'food-item';
+            item.innerText = fly ? '🪰' : ['🥩','🍝','🥔'][lane]; item.dataset.fly = fly;
+            document.getElementById('ml-'+lane).appendChild(item);
+            let y = -70; let m = setInterval(() => {
+                y += 6; item.style.top = y + 'px';
+                if(y > window.innerHeight-170 && y < window.innerHeight-90) item.dataset.hit = "true";
+                if(y > window.innerHeight || !gameActive) { clearInterval(m); item.remove(); }
+            }, 20);
+        }, 800); }
 
         function memeHit(lane) {
             const items = document.getElementById('ml-'+lane).querySelectorAll('.food-item[data-hit="true"]');
             if(items.length > 0) {
-                const i = items[0];
-                if(i.dataset.isFly === "true") {
-                    points = Math.max(0, points - 10); haptic('h');
-                } else {
-                    points += 5; haptic('m');
-                    const txt = ["С котлетками!", "С макарошками?", "Нет, с пюрешкой!"][lane];
-                    tg.MainButton.setText(txt).show(); setTimeout(()=>tg.MainButton.hide(), 400);
-                }
-                i.remove();
+                if(items[0].dataset.fly === "true") points -= 10; else points += 5;
+                items[0].remove(); haptic('m'); document.getElementById('score-ui').innerText = `🏆 ${points}`;
                 if(points >= 100) endGame('win');
-            } else {
-                points = Math.max(0, points - 2); // Штраф за промах
             }
-            document.getElementById('score-ui').innerText = `🍽️ ${points}/100`;
         }
 
-        // ОСТАЛЬНЫЕ УРОВНИ (БАЗОВАЯ ЛОГИКА)
-        function initSamovar() { points = 0; document.getElementById('progress-fill').style.width = '0%'; document.getElementById('samovar-obj').ontouchmove = () => { if(gameActive){ points += 0.5; updateSamovar(); } }; }
-        function updateSamovar() { document.getElementById('progress-fill').style.width = points + '%'; document.getElementById('samovar-obj').style.filter = `grayscale(${1 - points/100})`; if(points >= 100) endGame('win'); }
-        function initField() { spawnInt = setInterval(() => { const c = document.createElement('div'); c.className='room-item'; const win = Math.random()>0.3; c.innerText=win?'💰':'🕸️'; c.style.left=Math.random()*85+'%'; c.style.top=Math.random()*85+'%'; c.style.fontSize='40px'; c.onclick=()=>{ if(win){points++;}else{timeLeft-=2;} c.remove(); haptic('m'); document.getElementById('score-ui').innerText=`💰 ${points}/50`; if(points>=50) endGame('win'); }; document.getElementById('field-mode').appendChild(c); setTimeout(()=>c.remove(),900); }, 500); }
-        function initElephant() { spawnInt = setInterval(() => { const e = document.createElement('div'); e.className='room-item'; const isE = Math.random()<0.2; e.innerText=isE?'🐘':'📦'; e.style.fontSize=isE?(Math.random()*150+50)+'px':'50px'; e.style.left=Math.random()*80+'%'; e.style.top=Math.random()*80+'%'; e.onclick=()=>{ if(isE){points++;}else{errors++;} e.remove(); haptic('m'); document.getElementById('score-ui').innerText=`🐘 ${points}/15`; if(points>=15) endGame('win'); }; document.getElementById('elephant-mode').appendChild(e); setTimeout(()=>e.remove(),800); }, 600); }
-        function initRunner() { spawnInt = setInterval(() => { points += 2; document.getElementById('score-ui').innerText=`🏃 ${points}м`; if(points>=100) endGame('win'); }, 200); }
-        function nextItem() { const c = document.getElementById('card'); const isFly = Math.random() > 0.6; c.innerText = isFly ? '🪰' : '🍔'; c.dataset.type = isFly ? 'fly' : 'cutlet'; }
-        function handleInput(side) { const c = document.getElementById('card'); if((side==='left'&&c.dataset.type==='fly')||(side==='right'&&c.dataset.type==='cutlet')){points++; haptic('m');}else{errors++; haptic('h');} document.getElementById('score-ui').innerText=`🏆 ${points}`; document.getElementById('err-ui').innerText=`❌ ${errors}`; if(points>=getTarget()) endGame('win'); else nextItem(); }
-
-        function endGame(r) {
-            gameActive = false; clearInterval(loop); clearInterval(spawnInt);
-            let win = r === 'win';
-            if(win && curLvl === unlocked) unlocked++;
-            localStorage.setItem('unlocked_v10', unlocked);
-            let msg = win ? "ПОБЕДА!" : "ПРОИГРЫШ";
-            const winMsgs = ["", "", "МАРАФОН ПРОЙДЕН!", "ИВАН НЕ УВИДЕЛ СЛОНА!", "А ТЕПЕРЬ НА БАЗАР!", "ЧАЙ ГОТОВ!", "ТЕПЕРЬ ПОПЬЕМ ЧАЙКУ!"];
-            if(win && winMsgs[curLvl-1]) msg = winMsgs[curLvl-1];
-            document.getElementById('finish-content').innerHTML = `<h1>${msg}</h1>`;
-            document.getElementById('finish-overlay').style.display = 'flex';
+        function handleInput(side) {
+            const c = document.getElementById('card');
+            if((side==='left'&&c.dataset.type==='fly')||(side==='right'&&c.dataset.type==='cutlet')) points++; else errors++;
+            document.getElementById('score-ui').innerText = `🏆 ${points}`;
+            if(points >= 30) endGame('win'); else nextItem();
         }
 
+        function nextItem() { const c = document.getElementById('card'); const fly = Math.random()>0.5; c.innerText = fly?'🪰':'🍔'; c.dataset.type = fly?'fly':'cutlet'; }
+        function initSamovar() { document.getElementById('samovar-obj').ontouchmove = () => { points+=0.5; updateSamovar(); }; }
+        function updateSamovar() { document.getElementById('progress-fill').style.width = points + '%'; if(points >= 100) endGame('win'); }
+        function initElephant() { spawnInt = setInterval(() => { const e = document.createElement('div'); e.className='room-item'; e.innerText='🐘'; e.style.left=Math.random()*80+'%'; e.style.top=Math.random()*80+'%'; e.onclick=()=>{points++;e.remove();if(points>=15)endGame('win');}; document.getElementById('elephant-mode').appendChild(e); }, 1000); }
+        function initField() { spawnInt = setInterval(() => { const c = document.createElement('div'); c.className='room-item'; c.innerText='💰'; c.style.left=Math.random()*80+'%'; c.style.top=Math.random()*80+'%'; c.onclick=()=>{points++;c.remove();if(points>=50)endGame('win');}; document.getElementById('field-mode').appendChild(c); }, 800); }
+        
+        function startTimer() { clearInterval(loop); loop = setInterval(() => { timeLeft -= 0.1; document.getElementById('timer-ui').innerText = `⏳ ${timeLeft.toFixed(1)}с`; if(timeLeft <= 0) endGame('time'); }, 100); }
+        function endGame(r) { gameActive = false; clearInterval(loop); clearInterval(spawnInt); if(r==='win'&&curLvl===unlocked) unlocked++; document.getElementById('finish-content').innerHTML = `<h1>${r==='win'?'ПОБЕДА!':'КОНЕЦ'}</h1>`; document.getElementById('finish-overlay').style.display = 'flex'; }
         function hideMenu() { document.getElementById('menu-overlay').style.display = 'none'; document.getElementById('splash-screen').style.display = 'flex'; }
     </script>
 </body>
