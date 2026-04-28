@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>МухиVSКотлеты: Наследие</title>
+    <title>МухиVSКотлеты: Меню Уровней</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; color: white; touch-action: none; -webkit-tap-highlight-color: transparent; }
@@ -11,6 +11,7 @@
         
         .side-kots { background: linear-gradient(135deg, #4b1111 0%, #1a0a0a 100%); }
         .side-fly { background: linear-gradient(135deg, #112d4b 0%, #0a111a 100%); }
+        .side-balance { background: linear-gradient(135deg, #4b0082 0%, #000 100%); }
         
         #ui { position: absolute; top: 45px; width: 100%; display: flex; justify-content: space-around; z-index: 100; pointer-events: none; }
         .badge { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; min-width: 80px; text-align: center; }
@@ -18,25 +19,26 @@
         .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50; text-align: center; padding: 20px; box-sizing: border-box; }
         #splash { display: flex; z-index: 200; background: #000; }
         
+        /* Сетка уровней */
+        #menu-screen { background: #111; overflow-y: auto; display: none; padding-top: 80px; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; width: 100%; max-width: 400px; padding-bottom: 40px; }
+        .lvl-item { height: 90px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; font-size: 14px; border: 2px solid rgba(255,255,255,0.1); cursor: pointer; position: relative; }
+        .lvl-fly { background: rgba(0, 136, 204, 0.2); border-color: #0088cc; }
+        .lvl-kot { background: rgba(255, 77, 77, 0.2); border-color: #ff4d4d; }
+        .lvl-item span { font-size: 10px; opacity: 0.7; margin-top: 5px; text-transform: uppercase; }
+
         .btn { padding: 18px 45px; background: #0088cc; border: none; border-radius: 20px; color: white; font-weight: 800; font-size: 18px; margin: 10px; cursor: pointer; }
-        
         #stage { position: absolute; inset: 0; display: none; z-index: 10; }
         
-        /* Сортировка */
-        .tap-area { position: absolute; top: 0; width: 50%; height: 100%; z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 50px; box-sizing: border-box; font-weight: bold; font-size: 14px; letter-spacing: 1px; }
-        #card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 15; box-shadow: 0 0 40px rgba(255,255,255,0.2); }
-        
-        /* Трубы */
-        #pipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90%; max-width: 350px; z-index: 30; }
-        .pipe { background: rgba(255,255,255,0.15); height: 90px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; cursor: pointer; }
-        
-        /* Раннер */
-        #runner-fly { position: absolute; bottom: 80px; font-size: 60px; transition: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 40; pointer-events: none; transform: translateX(-50%); }
+        /* Игровые элементы (Сортировка, Трубы, Раннер) - как в прошлом коде */
+        .tap-area { position: absolute; top: 0; width: 50%; height: 100%; z-index: 20; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 50px; box-sizing: border-box; font-weight: bold; font-size: 14px; }
+        #card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 15; }
+        #pipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 90%; max-width: 350px; }
+        .pipe { background: rgba(255,255,255,0.15); height: 90px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 40px; }
+        #runner-fly { position: absolute; bottom: 80px; font-size: 60px; transition: 0.2s; z-index: 40; transform: translateX(-50%); }
         .lane-trigger { flex: 1; height: 100%; z-index: 45; }
         .obs { position: absolute; font-size: 50px; transform: translateX(-50%); z-index: 35; }
-
-        /* Наперстки */
-        .pot { font-size: 80px; margin: 10px; cursor: pointer; z-index: 30; }
+        .pot { font-size: 80px; margin: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -49,14 +51,19 @@
     </div>
 
     <div id="splash" class="screen">
-        <h1 style="font-size: 28px;">МУХИ VS КОТЛЕТЫ<br><span style="color: #0088cc; font-size: 18px;">ГЛАВА 1: НАСЛЕДИЕ</span></h1>
-        <button class="btn" onclick="nextLvl(0)">ИГРАТЬ</button>
+        <h1 style="font-size: 28px;">МУХИ VS КОТЛЕТЫ</h1>
+        <button class="btn" onclick="showMenu()">ИГРАТЬ</button>
+    </div>
+
+    <div id="menu-screen" class="screen">
+        <h2 style="margin-bottom: 20px;">ВЫБОР УРОВНЯ</h2>
+        <div class="grid" id="level-grid"></div>
+        <button onclick="location.reload()" style="background:none; border:none; color:#555; margin-top:10px;">В начало</button>
     </div>
 
     <div id="intro" class="screen" style="background: rgba(0,0,0,0.9);">
         <h2 id="l-title" style="color: #0088cc;"></h2>
         <p id="l-desc" style="font-size: 16px; margin: 20px 0;"></p>
-        <p id="l-tip" style="color: #ffcc00;"></p>
         <button class="btn" id="start-btn">ПОЕХАЛИ</button>
     </div>
 
@@ -66,15 +73,12 @@
             <div class="tap-area" style="right:0; background: rgba(0,255,0,0.05);" ontouchstart="tap('right')" onclick="tap('right')">➡️ ЕДА</div>
             <div id="card">🥩</div>
         </div>
-
         <div id="mod-pipe" style="height:100%; display:none; flex-direction:column; align-items:center; justify-content:center;">
             <div id="pipe-grid"></div>
         </div>
-
         <div id="mod-luck" style="height:100%; display:none; flex-direction:row; align-items:center; justify-content:center;">
             <div id="pot-wrap" style="display:flex;"></div>
         </div>
-
         <div id="mod-run" style="height:100%; display:none; position:relative;">
             <div id="runner-fly">🪰</div>
             <div style="display:flex; height:100%; width:100%;">
@@ -89,6 +93,7 @@
         <h1 id="f-res"></h1>
         <p id="f-body" style="margin-bottom:20px;"></p>
         <button class="btn" id="f-btn"></button>
+        <button class="btn" style="background:#444;" onclick="showMenu()">В МЕНЮ</button>
     </div>
 </div>
 
@@ -97,29 +102,47 @@
     tg.expand();
 
     let curIdx = -1, flyTotal = 0, kotTotal = 0, lvlScore = 0;
-    let gameOn = false, time = 30, pLane = 1, cardType = '';
+    let gameOn = false, time = 30, pLane = 1;
     let loop, spawn;
 
     const levels = [
-        { t: "1. Заготовка", side: "kots", mod: "sort", d: "Сортируй: Еду — направо, Ивана — налево!", goal: 15 },
-        { t: "2. Путь на базар", side: "fly", mod: "run", d: "Уворачивайся от людей! Сложность зависит от твоих котлет.", goal: 10 },
-        { t: "3. Инвестиция", side: "kots", mod: "luck", d: "Где золотая монета? Угадай кастрюлю.", goal: 1 },
-        { t: "4. Сборка самовара", side: "fly", mod: "pipe", d: "Поверни трубы так, чтобы все смотрели прямо (0°).", goal: 1 },
-        { t: "5. Чистка самовара", side: "kots", mod: "sort", d: "Жми на еду максимально быстро!", goal: 20 },
-        { t: "6. Полет домой", side: "fly", mod: "run", d: "Собери 50 котлет по пути, чтобы превратиться в Слона!", goal: 50 },
-        { t: "7. Где Слон?", side: "kots", mod: "luck", d: "Найди Слона под одной из крышек.", goal: 1 },
-        { t: "8. Паутина-Ниндзя", side: "fly", mod: "sort", d: "Свайпай (или жми) по сторонам, чтобы резать паутину!", goal: 25 },
-        { t: "9. ФИНАЛ: Баланс", side: "balance", mod: "final", d: "Время узнать, кто победил!", goal: 0 }
+        { t: "1. Заготовка", side: "kots", mod: "sort", d: "Собери котлеты, пока Иван не видит!", goal: 15 },
+        { t: "2. На базар", side: "fly", mod: "run", d: "Уворачивайся от людей. Сложность зависит от Котлет!", goal: 10 },
+        { t: "3. Инвестиция", side: "kots", mod: "luck", d: "Найди золотую монету!", goal: 1 },
+        { t: "4. Самовар", side: "fly", mod: "pipe", d: "Собери трубы, чтобы кран заработал.", goal: 1 },
+        { t: "5. Чистка", side: "kots", mod: "sort", d: "Быстро чисти самовар кликами!", goal: 20 },
+        { t: "6. Полет домой", side: "fly", mod: "run", d: "Собери 50 котлет, чтобы стать СЛОНОМ!", goal: 50 },
+        { t: "7. Где Слон?", side: "kots", mod: "luck", d: "Найди Слона в комнате.", goal: 1 },
+        { t: "8. Паутина", side: "fly", mod: "sort", d: "Разрезай паутину свайпами!", goal: 25 },
+        { t: "9. ФИНАЛ", side: "balance", mod: "final", d: "Кто же победит?", goal: 0 }
     ];
 
-    function nextLvl(i) {
-        curIdx = i; gameOn = false;
-        clearInterval(loop); clearInterval(spawn);
-        const l = levels[i];
+    function showMenu() {
         document.getElementById('splash').style.display = 'none';
         document.getElementById('finish').style.display = 'none';
         document.getElementById('stage').style.display = 'none';
+        document.getElementById('intro').style.display = 'none';
+        const menu = document.getElementById('menu-screen');
+        menu.style.display = 'flex';
+        
+        const grid = document.getElementById('level-grid');
+        grid.innerHTML = '';
+        
+        levels.forEach((l, i) => {
+            const item = document.createElement('div');
+            item.className = `lvl-item ${l.side === 'fly' ? 'lvl-fly' : 'lvl-kot'}`;
+            if(l.side === 'balance') item.style.borderColor = '#9932cc';
+            item.innerHTML = `${l.t} <span>${l.side}</span>`;
+            item.onclick = () => loadIntro(i);
+            grid.appendChild(item);
+        });
+    }
+
+    function loadIntro(i) {
+        curIdx = i;
+        document.getElementById('menu-screen').style.display = 'none';
         document.getElementById('intro').style.display = 'flex';
+        const l = levels[i];
         document.getElementById('game-container').className = 'side-' + l.side;
         document.getElementById('l-title').innerText = l.t;
         document.getElementById('l-desc').innerText = l.d;
@@ -142,6 +165,7 @@
         if(m === 'run') initRunner();
         if(m === 'final') showFinal();
 
+        clearInterval(loop);
         loop = setInterval(() => {
             time -= 0.1;
             document.getElementById('timer').innerText = "⏳ " + Math.max(0, time).toFixed(1);
@@ -149,46 +173,37 @@
         }, 100);
     }
 
-    // СОРТИРОВКА
-    function nextCard() {
-        const c = document.getElementById('card');
-        cardType = Math.random() < 0.3 ? 'ivan' : 'eda';
-        c.innerText = cardType === 'ivan' ? '😷' : '🥩';
-        c.style.background = cardType === 'ivan' ? '#ffcccc' : '#ccffcc';
+    // --- Логика игры (упрощенная для примера) ---
+    function updateStats() {
+        if(levels[curIdx].side === 'fly') flyTotal++; 
+        else if(levels[curIdx].side === 'kots') kotTotal++;
+        document.getElementById('fly-pts').innerText = flyTotal;
+        document.getElementById('kot-pts').innerText = kotTotal;
     }
 
-    function tap(s) {
-        if(!gameOn || levels[curIdx].mod !== 'sort') return;
-        event.preventDefault(); // Предотвращаем двойное срабатывание touch/click
-        if((cardType === 'ivan' && s === 'left') || (cardType === 'eda' && s === 'right')) {
-            lvlScore++; updateStats();
-            if(lvlScore >= levels[curIdx].goal) end(true);
-            nextCard();
-        } else { time -= 1.5; }
-    }
-
-    // ТРУБЫ
-    function initPipes() {
-        const g = document.getElementById('pipe-grid'); g.innerHTML = '';
-        for(let i=0; i<9; i++) {
-            let p = document.createElement('div'); p.className = 'pipe';
-            let r = Math.floor(Math.random()*3 + 1) * 90;
-            p.style.transform = `rotate(${r}deg)`; p.dataset.r = r; p.innerText = '🚀';
-            p.onclick = function() {
-                let nr = parseInt(this.dataset.r) + 90;
-                this.style.transform = `rotate(${nr}deg)`;
-                this.dataset.r = nr;
-                if([...document.querySelectorAll('.pipe')].every(el => parseInt(el.dataset.r)%360 === 0)) end(true);
-            };
-            g.appendChild(p);
+    function end(win) {
+        gameOn = false; clearInterval(loop); clearInterval(spawn);
+        const f = document.getElementById('finish');
+        f.style.display = 'flex';
+        document.getElementById('f-res').innerText = win ? "ПОБЕДА!" : "ПРОВАЛ";
+        document.getElementById('f-body').innerText = win ? "Идем дальше?" : "Попробуй снова!";
+        const btn = document.getElementById('f-btn');
+        if(win) {
+            btn.innerText = "СЛЕДУЮЩИЙ";
+            btn.onclick = () => { if(curIdx < levels.length-1) loadIntro(curIdx+1); else showMenu(); };
+        } else {
+            btn.innerText = "ПОВТОРИТЬ";
+            btn.onclick = () => loadIntro(curIdx);
         }
     }
 
-    // НАПЕРСТКИ
-    function initLuck() {
-        const w = document.getElementById('pot-wrap'); w.innerHTML = '';
-        const win = Math.floor(Math.random()*3);
-        for(let i=0; i<3; i++) {
+    // Раннер, Трубы, Сортировка - функции из предыдущего кода остаются такими же
+    // (вставьте функции nextCard, tap, initPipes, initLuck, initRunner, mv из прошлого сообщения здесь)
+    // ...
+</script>
+</body>
+</html>
+<3; i++) {
             let p = document.createElement('div'); p.className = 'pot'; p.innerText = '🍯';
             p.onclick = function() {
                 if(i === win) { this.innerText = '🌟'; setTimeout(() => end(true), 500); }
