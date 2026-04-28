@@ -6,80 +6,238 @@
     <title>МухиVSКотлеты: Наследие</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
-        #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        #bg-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
-        #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
-        .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; background: rgba(0, 136, 204, 0.35); backdrop-filter: blur(8px); margin-bottom: 12px; width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
-        #calc-overlay, #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
-        .modal-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 25px; text-align: center; color: #333; }
-        .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 13px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; line-height: 1.4; color: #333; }
-        #menu-overlay { position: fixed; inset: 0; background: #fff; z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 20px; overflow-y: auto; }
-        .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 85%; }
-        .level-card { height: 70px; background: #eee; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: #aaa; text-align: center; padding: 5px; box-sizing: border-box; }
-        .level-card.open { background: #0088cc; color: white; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; color: white; touch-action: none; }
+        #game-container { position: relative; width: 100vw; height: 100vh; transition: 0.5s; }
         
-        #game-area { position: relative; width: 100%; height: 100%; display: none; overflow: hidden; background: #fff; }
-        .tap-zone { width: 50%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: background 0.2s; }
-        #zone-left { background: #ffdde1; } #zone-right { background: #d1e8ff; }
-        .zone-hint { font-weight: 900; opacity: 0.3; font-size: 20px; color: #000; pointer-events: none; text-align: center; white-space: pre-line; }
-        .pub-hint { font-weight: 900; color: #d32f2f; font-size: 20px; display: none; text-align: center; pointer-events: none; }
-
-        .card-container { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; pointer-events: none; }
-        .card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); transition: 0.3s; }
-        .fly-left { transform: translate(-300%, -50%) rotate(-30deg); opacity: 0; }
-        .fly-right { transform: translate(200%, -50%) rotate(30deg); opacity: 0; }
-
-        #runner-mode, #meme-area, #search-mode, #samovar-mode { position: absolute; inset: 0; display: none; }
-        #player-fly { position: absolute; bottom: 120px; left: 50%; transform: translateX(-50%); font-size: 60px; transition: left 0.15s; }
-        .lane { width: 33.33%; height: 100%; float: left; position: relative; border-right: 1px solid rgba(0,0,0,0.05); }
-        .falling-item { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); font-size: 50px; }
-        .meme-btn { position: absolute; bottom: 0; width: 33.33%; height: 100px; border: none; background: #ff9800; color: white; font-weight: 900; font-size: 10px; }
-
-        #info-bar { position: absolute; top: 50px; width: 100%; display: flex; justify-content: center; gap: 8px; z-index: 200; pointer-events: none; }
-        .info-item { background: rgba(255,255,255,0.9); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #eee; }
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 30px; }
-
-        .box-drift { position: absolute; animation: driftBox 4s infinite alternate ease-in-out; pointer-events: none; }
-        @keyframes driftBox { from { transform: translate(0,0); } to { transform: translate(30px, 40px); } }
-        #samovar-clicker { font-size: 180px; cursor: pointer; transition: transform 0.1s; user-select: none; }
-        #samovar-clicker:active { transform: scale(0.9); }
+        .side-kots { background: linear-gradient(135deg, #4b1111 0%, #1a0a0a 100%); }
+        .side-fly { background: linear-gradient(135deg, #112d4b 0%, #0a111a 100%); }
+        
+        #ui { position: absolute; top: 45px; width: 100%; display: flex; justify-content: space-around; z-index: 100; pointer-events: none; }
+        .badge { background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); font-size: 13px; min-width: 80px; text-align: center; }
+        
+        .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50; text-align: center; padding: 20px; }
+        #splash { display: flex; z-index: 200; background: #000; }
+        
+        .btn { padding: 18px 45px; background: #0088cc; border: none; border-radius: 20px; color: white; font-weight: 800; font-size: 18px; margin: 10px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        
+        /* Игровые модули */
+        #stage { position: absolute; inset: 0; display: none; }
+        .card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: 0 0 40px rgba(255,255,255,0.2); }
+        
+        /* Трубопровод */
+        #pipe-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 20px; width: 90%; max-width: 400px; }
+        .pipe { background: rgba(255,255,255,0.1); height: 100px; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 50px; cursor: pointer; transition: 0.3s; }
+        
+        /* Наперстки */
+        .pot-container { display: flex; gap: 15px; }
+        .pot { font-size: 80px; cursor: pointer; transition: 0.3s; }
+        
+        #runner-fly { position: absolute; bottom: 60px; font-size: 60px; transition: 0.15s; z-index: 10; }
+        .obs { position: absolute; font-size: 50px; }
+        
+        #fruit-canvas { position: absolute; inset: 0; pointer-events: none; }
     </style>
 </head>
 <body>
 
-    <div id="splash-screen">
-        <img src="logo.jpg" id="bg-logo">
-        <div id="global-stats">🏆 Баллы: <span id="gs-pts">0</span> | 🍔 Котлеты: <span id="gs-kots">0</span></div>
-        <button class="btn-ui" onclick="showMenu()">ИГРАТЬ</button>
-        <button class="btn-ui" style="background:rgba(76,175,80,0.35)" onclick="toggleCalc(true)">🧮 КАЛЬКУЛЯТОР</button>
+<div id="game-container" class="side-kots">
+    <div id="ui">
+        <div class="badge">🪰 <span id="fly-pts">0</span></div>
+        <div class="badge" id="timer">⏳ 30.0</div>
+        <div class="badge">🥩 <span id="kot-pts">0</span></div>
     </div>
 
-    <div id="intro-overlay">
-        <div class="modal-window">
-            <h2 id="intro-title" style="color:#0088cc">Уровень</h2>
-            <p id="intro-desc">Описание...</p>
-            <button class="btn-ui" style="width:100%; background:#0088cc; margin-top:10px" onclick="realStart()">ПОЕХАЛИ!</button>
+    <div id="splash" class="screen">
+        <h1 style="font-size: 32px;">МУХИ VS КОТЛЕТЫ<br><span style="color: #0088cc; font-size: 20px;">ГЛАВА 1: НАСЛЕДИЕ</span></h1>
+        <button class="btn" onclick="nextLvl(0)">НАЧАТЬ</button>
+    </div>
+
+    <div id="intro" class="screen" style="background: rgba(0,0,0,0.92);">
+        <h2 id="l-title" style="color: #0088cc;"></h2>
+        <p id="l-desc" style="font-size: 16px; opacity: 0.9; line-height: 1.4;"></p>
+        <p id="l-tip" style="color: #ffcc00; font-weight: bold;"></p>
+        <button class="btn" onclick="startGame()">ПОНЯТНО</button>
+    </div>
+
+    <div id="stage">
+        <div id="mod-sort" style="height:100%; display:none;">
+            <div style="width:50%; height:100%; float:left;" onclick="tap('left')"></div>
+            <div style="width:50%; height:100%; float:left;" onclick="tap('right')"></div>
+            <div class="card" id="card">🥩</div>
+        </div>
+
+        <div id="mod-pipe" style="height:100%; display:none; flex-direction:column; align-items:center; justify-content:center;">
+            <div id="pipe-grid"></div>
+        </div>
+
+        <div id="mod-luck" style="height:100%; display:none; flex-direction:column; align-items:center; justify-content:center;">
+            <div class="pot-container" id="pot-wrap"></div>
+        </div>
+
+        <div id="mod-run" style="height:100%; display:none;">
+            <div id="runner-fly">🪰</div>
+            <div style="display:flex; height:100%;">
+                <div onclick="mv(0)" style="flex:1"></div>
+                <div onclick="mv(1)" style="flex:1"></div>
+                <div onclick="mv(2)" style="flex:1"></div>
+            </div>
         </div>
     </div>
 
-    <div id="calc-overlay">
-        <div class="modal-window">
-            <h3 style="color:#4caf50; margin-top:0">🧮 Калькулятор мух</h3>
-            <input type="number" id="calcA" class="calc-input" placeholder="Количество человек">
-            <input type="number" id="calcB" class="calc-input" placeholder="Количество дней">
-            <input type="text" id="calcD" class="calc-input" placeholder="Ваше имя">
-            <div id="calcOutput">Введите данные для расчета...</div>
-            <button class="btn-ui" style="width:100%; background:#4caf50; margin-top:10px" onclick="doCalc()">РАССЧИТАТЬ</button>
-            <button onclick="toggleCalc(false)" style="margin-top:10px; border:none; background:none; color:#999">Закрыть</button>
-        </div>
+    <div id="finish" class="screen" style="background: rgba(0,0,0,0.95);">
+        <h1 id="f-res"></h1>
+        <p id="f-body"></p>
+        <button class="btn" id="f-btn"></button>
     </div>
+</div>
 
-    <div id="menu-overlay">
-        <h2 style="color:#0088cc">ВЫБОР УРОВНЯ</h2>
-        <div class="levels-grid" id="levels-grid"></div>
-        <button onclick="hideMenu()" style="background:none; border:none; color:#999; margin-top:20px; font-weight:bold">Назад</button>
+<script>
+    let curIdx = -1;
+    let flyTotal = 0, kotTotal = 0, lvlScore = 0;
+    let gameOn = false, time = 30, pLane = 1;
+    let loop, spawn;
+
+    const levels = [
+        { t: "1. Заготовка", side: "kots", mod: "sort", d: "Сортируй: Еда — направо, Иван — налево!", goal: 20 },
+        { t: "2. Путь на базар", side: "fly", mod: "run", d: "Лети! Количество людей зависит от того, сколько котлет ты собрал.", goal: 15 },
+        { t: "3. Инвестиция", side: "kots", mod: "luck", d: "Угадай, в какой кастрюле золотая монета.", goal: 1 },
+        { t: "4. Сборка самовара", side: "fly", mod: "pipe", d: "Поверни сегменты труб так, чтобы кран смотрел вниз (0°).", goal: 1 },
+        { t: "5. Чистка", side: "kots", mod: "sort", d: "Быстро чисти самовар! Кликай только на блестящие зоны.", goal: 25 },
+        { t: "6. Полет домой", side: "fly", mod: "run", d: "Собери 50 котлет. При достижении цели Муха станет Слоном!", goal: 50 },
+        { t: "7. Где Слон?", side: "kots", mod: "luck", d: "Слон спрятался! Найди его под одной из крышек.", goal: 1 },
+        { t: "8. Ниндзя-Паутина", side: "fly", mod: "sort", d: "Разрезай паутину быстрыми свайпами по сторонам!", goal: 30 },
+        { t: "13. Финал: Баланс", side: "balance", mod: "final", d: "Решающая битва!", goal: 0 }
+    ];
+
+    function nextLvl(i) {
+        curIdx = i; gameOn = false;
+        const l = levels[i];
+        document.getElementById('splash').style.display = 'none';
+        document.getElementById('finish').style.display = 'none';
+        document.getElementById('intro').style.display = 'flex';
+        document.getElementById('game-container').className = 'side-' + l.side;
+        document.getElementById('l-title').innerText = l.t;
+        document.getElementById('l-desc').innerText = l.d;
+        document.getElementById('l-tip').innerText = i === 1 ? `Сложность: ${Math.floor(kotTotal/4)+2} чел.` : "";
+    }
+
+    function startGame() {
+        document.getElementById('intro').style.display = 'none';
+        document.getElementById('stage').style.display = 'block';
+        lvlScore = 0; time = 30; gameOn = true;
+        
+        const m = levels[curIdx].mod;
+        document.querySelectorAll('#stage > div').forEach(d => d.style.display = 'none');
+        document.getElementById('mod-' + m).style.display = m === 'pipe' ? 'flex' : (m === 'luck' ? 'flex' : 'block');
+
+        if(m === 'sort') nextCard();
+        if(m === 'pipe') initPipes();
+        if(m === 'luck') initLuck();
+        if(m === 'run') initRunner();
+        if(m === 'final') showFinal();
+
+        loop = setInterval(() => {
+            time -= 0.1;
+            document.getElementById('timer').innerText = "⏳ " + Math.max(0, time).toFixed(1);
+            if(time <= 0) end(false);
+        }, 100);
+    }
+
+    // --- Модули механик ---
+    let cardType = '';
+    function nextCard() {
+        const c = document.getElementById('card');
+        const r = Math.random();
+        cardType = r < 0.3 ? 'ivan' : 'eda';
+        c.innerText = cardType === 'ivan' ? '😷' : (Math.random() > 0.5 ? '🥩' : '🍔');
+    }
+
+    function tap(s) {
+        if(!gameOn) return;
+        if((cardType === 'ivan' && s === 'left') || (cardType === 'eda' && s === 'right')) {
+            lvlScore++; updateStats();
+            if(lvlScore >= levels[curIdx].goal) end(true);
+            nextCard();
+        } else { time -= 1; }
+    }
+
+    function initPipes() {
+        const g = document.getElementById('pipe-grid'); g.innerHTML = '';
+        for(let i=0; i<9; i++) {
+            let p = document.createElement('div'); p.className = 'pipe';
+            let r = Math.floor(Math.random()*4)*90;
+            p.style.transform = `rotate(${r}deg)`; p.dataset.r = r; p.innerText = '🚀';
+            p.onclick = () => {
+                let nr = parseInt(p.dataset.r) + 90; p.style.transform = `rotate(${nr}deg)`; p.dataset.r = nr;
+                if([...document.querySelectorAll('.pipe')].every(el => parseInt(el.dataset.r)%360 === 0)) end(true);
+            };
+            g.appendChild(p);
+        }
+    }
+
+    function initLuck() {
+        const w = document.getElementById('pot-wrap'); w.innerHTML = '';
+        const win = Math.floor(Math.random()*3);
+        for(let i=0; i<3; i++) {
+            let p = document.createElement('div'); p.className = 'pot'; p.innerText = '🍯';
+            p.onclick = () => {
+                if(i === win) { p.innerText = '🌟'; setTimeout(() => end(true), 600); }
+                else { p.innerText = '😷'; setTimeout(() => end(false), 600); }
+            };
+            w.appendChild(p);
+        }
+    }
+
+    function initRunner() {
+        pLane = 1; mv(1);
+        const isL6 = curIdx === 5;
+        spawn = setInterval(() => {
+            const ln = Math.floor(Math.random()*3);
+            const o = document.createElement('div'); o.className = 'obs';
+            o.style.left = (ln * 33 + 10) + '%'; o.style.top = '-50px';
+            o.innerText = isL6 ? '🥩' : '🚶';
+            document.getElementById('mod-run').appendChild(o);
+            let y = -50;
+            let m = setInterval(() => {
+                y += 6; o.style.top = y + 'px';
+                if(y > window.innerHeight - 130 && ln === pLane) {
+                    if(isL6) { lvlScore++; updateStats(); o.remove(); clearInterval(m); if(lvlScore >= 50) { document.getElementById('runner-fly').innerText = '🐘'; setTimeout(()=>end(true), 500); } }
+                    else { end(false); }
+                }
+                if(y > window.innerHeight || !gameOn) { o.remove(); clearInterval(m); }
+            }, 20);
+        }, curIdx === 1 ? 900 - (kotTotal*8) : 700);
+    }
+
+    function mv(l) { pLane = l; document.getElementById('runner-fly').style.left = (l*33+10)+'%'; }
+
+    function updateStats() {
+        if(levels[curIdx].side === 'fly') flyTotal++; else if(levels[curIdx].side === 'kots') kotTotal++;
+        document.getElementById('fly-pts').innerText = flyTotal;
+        document.getElementById('kot-pts').innerText = kotTotal;
+    }
+
+    function end(win) {
+        gameOn = false; clearInterval(loop); clearInterval(spawn);
+        document.getElementById('stage').style.display = 'none';
+        const f = document.getElementById('finish'); f.style.display = 'flex';
+        document.getElementById('f-res').innerText = win ? "ПОБЕДА!" : "ПРОИГРЫШ";
+        document.getElementById('f-body').innerText = win ? "Вы отлично справились с задачей." : "Попробуйте еще раз!";
+        const b = document.getElementById('f-btn');
+        if(win) { b.innerText = "ДАЛЬШЕ"; b.onclick = () => nextLvl(curIdx + 1); }
+        else { b.innerText = "ПОВТОР"; b.onclick = () => nextLvl(curIdx); }
+    }
+
+    function showFinal() {
+        const win = flyTotal > kotTotal ? "МУХИ" : "КОТЛЕТЫ";
+        document.getElementById('f-res').innerText = "ИТОГ: Победили " + win;
+        document.getElementById('f-body').innerText = flyTotal > kotTotal ? "Слон захватил кухню!" : "Иван съел все котлеты и доволен.";
+        document.getElementById('f-btn').innerText = "ЗАНОВО";
+        document.getElementById('f-btn').onclick = () => location.reload();
+    }
+</script>
+</body>
+</html>
     </div>
 
     <div id="game-area">
