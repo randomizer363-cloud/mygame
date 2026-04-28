@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+з<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
@@ -365,7 +365,309 @@
             });
             document.getElementById('gs-pts').innerText = globalPts.toFixed(0);
             document.getElementById('gs-kots').innerText = globalKots;
+    <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>МухиVSКотлеты: Animated Edition</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; color: white; touch-action: none; -webkit-tap-highlight-color: transparent; }
+        
+        #game-container { position: relative; width: 100vw; height: 100vh; transition: background 1s ease; }
+        
+        /* Цвета сторон */
+        .side-kots { background: radial-gradient(circle at center, #6b1111 0%, #000 100%); }
+        .side-fly { background: radial-gradient(circle at center, #113d6b 0%, #000 100%); }
+        .side-balance { background: radial-gradient(circle at center, #4b0082 0%, #000 100%); }
+
+        /* Анимации появления экранов */
+        .screen { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 50; text-align: center; padding: 20px; box-sizing: border-box; animation: fadeIn var(--transition); }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(1.05); } to { opacity: 1; transform: scale(1); } }
+
+        #ui { position: absolute; top: 45px; width: 100%; display: flex; justify-content: space-around; z-index: 100; pointer-events: none; animation: slideDown 0.5s ease; }
+        @keyframes slideDown { from { transform: translateY(-50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .badge { background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(5px); min-width: 70px; }
+
+        /* Сетка уровней с анимацией покачивания */
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 400px; }
+        .lvl-item { height: 80px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s ease; }
+        .lvl-item:active { transform: scale(0.9); }
+        .lvl-fly { background: rgba(0, 136, 204, 0.2); box-shadow: 0 0 15px rgba(0, 136, 204, 0.3); }
+        .lvl-kot { background: rgba(255, 77, 77, 0.2); box-shadow: 0 0 15px rgba(255, 77, 77, 0.3); }
+
+        /* Анимация Кнопки */
+        .btn { padding: 16px 40px; background: #0088cc; border: none; border-radius: 50px; color: white; font-weight: bold; font-size: 18px; margin: 10px; cursor: pointer; box-shadow: 0 5px 20px rgba(0,136,204,0.4); transition: 0.3s; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0,136,204,0.7); } 70% { box-shadow: 0 0 0 15px rgba(0,136,204,0); } 100% { box-shadow: 0 0 0 0 rgba(0,136,204,0); } }
+
+        /* Игровые объекты */
+        .card { width: 130px; height: 130px; background: white; border-radius: 35px; display: flex; align-items: center; justify-content: center; font-size: 70px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 20; color: #000; animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes popIn { from { transform: translate(-50%, -50%) scale(0); } to { transform: translate(-50%, -50%) scale(1); } }
+
+        .shake { animation: shake 0.4s; }
+        @keyframes shake { 0%, 100% { transform: translate(-50%, -50%); } 25% { transform: translate(-55%, -50%); } 75% { transform: translate(-45%, -50%); } }
+
+        #runner-fly { position: absolute; bottom: 100px; font-size: 60px; z-index: 40; transform: translateX(-50%); transition: left 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); text-shadow: 0 10px 20px rgba(0,0,0,0.5); }
+        
+        .pipe { background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.1); transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s; }
+        .pipe.correct { background: rgba(0, 255, 127, 0.3); border-color: #00ff7f; }
+
+        #pot-wrap .pot { transition: transform 0.3s ease; }
+        #pot-wrap .pot:active { transform: translateY(-20px); }
+    </style>
+</head>
+<body>
+
+<div id="game-container" class="side-kots">
+    <div id="ui">
+        <div class="badge">🪰 <span id="fly-pts">0</span></div>
+        <div class="badge" id="timer">⏳ 30.0</div>
+        <div class="badge">🥩 <span id="kot-pts">0</span></div>
+    </div>
+
+    <div id="splash" class="screen" style="display: flex;">
+        <h1 style="font-size: 36px; margin-bottom: 0;">МУХИ <span style="color:#ff4d4d">VS</span> КОТЛЕТЫ</h1>
+        <p style="opacity: 0.6; margin-top: 5px;">Легендарное противостояние</p>
+        <button class="btn" onclick="showMenu()">ИГРАТЬ</button>
+    </div>
+
+    <div id="menu-screen" class="screen" style="background: rgba(10,10,10,0.98); overflow-y: auto;">
+        <h2 style="margin-top: 60px;">ВЫБОР ЭТАПА</h2>
+        <div class="grid" id="level-grid"></div>
+        <div style="height: 40px;"></div>
+    </div>
+
+    <div id="intro" class="screen" style="background: rgba(0,0,0,0.96);">
+        <div id="intro-card" style="background: rgba(255,255,255,0.05); padding: 30px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1);">
+            <h2 id="l-title" style="margin-top: 0; color: #0088cc;"></h2>
+            <p id="l-desc" style="font-size: 18px; line-height: 1.5;"></p>
+            <button class="btn" id="start-btn">ПОЕХАЛИ</button>
+        </div>
+    </div>
+
+    <div id="stage">
+        <div id="mod-sort" style="height:100%; display:none;">
+            <div class="tap-zone" style="position:absolute; left:0; width:50%; height:100%; z-index:30;" onclick="handleTap('left')"></div>
+            <div class="tap-zone" style="position:absolute; right:0; width:50%; height:100%; z-index:30;" onclick="handleTap('right')"></div>
+            <div id="card">🥩</div>
+        </div>
+        <div id="mod-pipe" style="height:100%; display:none; flex-direction:column; align-items:center; justify-content:center;">
+            <div id="pipe-grid"></div>
+        </div>
+        <div id="mod-luck" style="height:100%; display:none; flex-direction:row; align-items:center; justify-content:center;">
+            <div id="pot-wrap" style="display:flex;"></div>
+        </div>
+        <div id="mod-run" style="height:100%; display:none;">
+            <div id="runner-fly">🪰</div>
+            <div style="display:flex; height:100%; position:relative; z-index:45;">
+                <div onclick="moveFly(0)" style="flex:1"></div>
+                <div onclick="moveFly(1)" style="flex:1"></div>
+                <div onclick="moveFly(2)" style="flex:1"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="finish" class="screen" style="background: rgba(0,0,0,0.98);">
+        <h1 id="f-res" style="font-size: 48px; margin-bottom: 10px;"></h1>
+        <p id="f-body" style="font-size: 20px; opacity: 0.8; margin-bottom: 30px;"></p>
+        <button class="btn" id="f-btn">ДАЛЬШЕ</button>
+        <button class="btn" style="background:#333; box-shadow: none; animation: none;" onclick="showMenu()">В МЕНЮ</button>
+    </div>
+</div>
+
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.headerColor = "#000000";
+
+    let curIdx = -1, flyTotal = 0, kotTotal = 0, lvlPts = 0, time = 30;
+    let gameActive = false, loop, spawn, cardType = '', pLane = 1;
+
+    const levels = [
+        { t: "1. Сортировка", side: "kots", mod: "sort", d: "Котлеты - направо, Иван - налево!", goal: 15 },
+        { t: "2. На базар", side: "fly", mod: "run", d: "Уворачивайся от голодных людей!", goal: 10 },
+        { t: "3. Инвестиция", side: "kots", mod: "luck", d: "Найди монету в кастрюлях.", goal: 1 },
+        { t: "4. Самовар", side: "fly", mod: "pipe", d: "Поверни трубы в правильное положение.", goal: 1 },
+        { t: "5. Чистка", side: "kots", mod: "sort", d: "Максимально быстро кликай на еду!", goal: 20 },
+        { t: "6. Полет домой", side: "fly", mod: "run", d: "Собери 50 котлет, чтобы стать СЛОНОМ!", goal: 50 },
+        { t: "7. Прятки со Слоном", side: "kots", mod: "luck", d: "Где спрятался Слон? Угадай!", goal: 1 },
+        { t: "8. Резка Паутины", side: "fly", mod: "sort", d: "Разрезай путы быстрыми кликами!", goal: 25 },
+        { t: "9. ФИНАЛЬНЫЙ БОЙ", side: "balance", mod: "final", d: "Решающий момент истории.", goal: 0 }
+    ];
+
+    function showMenu() {
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        const menu = document.getElementById('menu-screen');
+        menu.style.display = 'flex';
+        const grid = document.getElementById('level-grid'); grid.innerHTML = '';
+        levels.forEach((l, i) => {
+            const div = document.createElement('div');
+            div.className = `lvl-item ${l.side === 'fly' ? 'lvl-fly' : 'lvl-kot'}`;
+            if(l.side === 'balance') div.style.background = 'linear-gradient(to bottom, #4b0082, #000)';
+            div.innerHTML = `<div style="font-size:18px">${i+1}</div><div style="font-size:11px">${l.t}</div>`;
+            div.onclick = () => loadIntro(i);
+            grid.appendChild(div);
+        });
+    }
+
+    function loadIntro(i) {
+        curIdx = i;
+        document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+        document.getElementById('intro').style.display = 'flex';
+        document.getElementById('l-title').innerText = levels[i].t;
+        document.getElementById('l-desc').innerText = levels[i].d;
+        document.getElementById('game-container').className = 'side-' + levels[i].side;
+        document.getElementById('start-btn').onclick = startGame;
+    }
+
+    function startGame() {
+        document.getElementById('intro').style.display = 'none';
+        document.getElementById('stage').style.display = 'block';
+        lvlPts = 0; time = 30; gameActive = true;
+        
+        const m = levels[curIdx].mod;
+        document.querySelectorAll('#stage > div').forEach(d => d.style.display = 'none');
+        const activeMod = document.getElementById('mod-' + m);
+        activeMod.style.display = (m === 'pipe' || m === 'luck') ? 'flex' : 'block';
+
+        if(m === 'sort') nextCard();
+        if(m === 'pipe') initPipes();
+        if(m === 'luck') initLuck();
+        if(m === 'run') initRunner();
+        if(m === 'final') showFinal();
+
+        clearInterval(loop);
+        loop = setInterval(() => {
+            time -= 0.1;
+            document.getElementById('timer').innerText = "⏳ " + Math.max(0, time).toFixed(1);
+            if(time <= 0 && gameActive) endLevel(false);
+        }, 100);
+    }
+
+    function nextCard() {
+        const c = document.getElementById('card');
+        c.style.animation = 'none';
+        c.offsetHeight; // триггер рефлоу
+        c.style.animation = 'popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        cardType = Math.random() < 0.3 ? 'ivan' : 'eda';
+        c.innerText = cardType === 'ivan' ? '😷' : '🥩';
+    }
+
+    function handleTap(s) {
+        if(!gameActive) return;
+        const c = document.getElementById('card');
+        if((cardType === 'ivan' && s === 'left') || (cardType === 'eda' && s === 'right')) {
+            lvlPts++; updateStats();
+            if(lvlPts >= levels[curIdx].goal) endLevel(true);
+            else nextCard();
+        } else {
+            c.classList.add('shake');
+            setTimeout(() => c.classList.remove('shake'), 400);
+            time -= 2;
         }
+    }
+
+    function initPipes() {
+        const g = document.getElementById('pipe-grid'); g.innerHTML = '';
+        for(let i=0; i<9; i++) {
+            let p = document.createElement('div'); p.className = 'pipe';
+            let r = Math.floor(Math.random()*3 + 1) * 90;
+            p.style.transform = `rotate(${r}deg)`; p.dataset.r = r; p.innerText = '🚀';
+            p.onclick = function() {
+                let nr = parseInt(this.dataset.r) + 90;
+                this.style.transform = `rotate(${nr}deg)`;
+                this.dataset.r = nr;
+                if(nr % 360 === 0) this.classList.add('correct'); else this.classList.remove('correct');
+                if([...document.querySelectorAll('.pipe')].every(el => parseInt(el.dataset.r)%360 === 0)) {
+                    setTimeout(() => endLevel(true), 500);
+                }
+            };
+            g.appendChild(p);
+        }
+    }
+
+    function initLuck() {
+        const w = document.getElementById('pot-wrap'); w.innerHTML = '';
+        const win = Math.floor(Math.random()*3);
+        for(let i=0; i<3; i++) {
+            let p = document.createElement('div'); p.innerText = '🍯'; p.className = 'pot'; p.style.fontSize = '80px'; p.style.margin = '15px';
+            p.onclick = function() {
+                if(i === win) { 
+                    this.style.transform = 'scale(1.5)';
+                    this.innerText = (curIdx === 6 ? '🐘' : '🌟'); 
+                    setTimeout(()=>endLevel(true), 600); 
+                } else { 
+                    this.innerText = '😷'; 
+                    this.classList.add('shake');
+                    setTimeout(()=>endLevel(false), 600); 
+                }
+            };
+            w.appendChild(p);
+        }
+    }
+
+    function initRunner() {
+        pLane = 1; moveFly(1);
+        const isL6 = (curIdx === 5);
+        spawn = setInterval(() => {
+            const ln = Math.floor(Math.random()*3);
+            const o = document.createElement('div'); o.className = 'obs';
+            o.style.left = (ln * 33 + 16.5) + '%'; o.style.top = '-50px';
+            o.innerText = isL6 ? '🥩' : '🚶';
+            document.getElementById('mod-run').appendChild(o);
+            let y = -50;
+            let m = setInterval(() => {
+                y += 7; o.style.top = y + 'px';
+                if(y > window.innerHeight - 170 && y < window.innerHeight - 50 && ln === pLane) {
+                    if(isL6) { 
+                        lvlPts++; updateStats(); o.remove(); clearInterval(m); 
+                        if(lvlPts >= 50) { document.getElementById('runner-fly').innerText = '🐘'; setTimeout(()=>endLevel(true), 500); }
+                    } else { endLevel(false); clearInterval(m); }
+                }
+                if(y > window.innerHeight || !gameActive) { o.remove(); clearInterval(m); }
+            }, 20);
+        }, 850);
+    }
+
+    function moveFly(l) { pLane = l; document.getElementById('runner-fly').style.left = (l*33+16.5)+'%'; }
+
+    function updateStats() {
+        if(levels[curIdx].side === 'fly') flyTotal++; 
+        else if(levels[curIdx].side === 'kots') kotTotal++;
+        document.getElementById('fly-pts').innerText = flyTotal;
+        document.getElementById('kot-pts').innerText = kotTotal;
+    }
+
+    function endLevel(win) {
+        gameActive = false; clearInterval(loop); clearInterval(spawn);
+        document.getElementById('finish').style.display = 'flex';
+        document.getElementById('f-res').innerText = win ? "ПОБЕДА!" : "ПРОВАЛ";
+        document.getElementById('f-body').innerText = win ? "Вы движетесь к финалу!" : "Иван оказался хитрее...";
+        const btn = document.getElementById('f-btn');
+        if(win) {
+            btn.innerText = "ДАЛЕЕ";
+            btn.onclick = () => { if(curIdx < levels.length-1) loadIntro(curIdx+1); else showMenu(); };
+        } else {
+            btn.innerText = "ПОВТОРИТЬ";
+            btn.onclick = () => loadIntro(curIdx);
+        }
+    }
+
+    function showFinal() {
+        gameActive = false;
+        const winner = flyTotal > kotTotal ? "МУХИ" : "КОТЛЕТЫ";
+        document.getElementById('f-res').innerText = "КОНЕЦ: " + winner;
+        document.getElementById('f-body').innerText = flyTotal > kotTotal ? "Мир принадлежит Мухам-Слонам!" : "Котлеты победили, Иван сыт!";
+        document.getElementById('f-btn').innerText = "В НАЧАЛО";
+        document.getElementById('f-btn').onclick = () => location.reload();
+    }
+</script>
+</body>
+</html>
+    }
 
         function showIntro() {
             document.getElementById('intro-title').innerText = levelData[curLvl-1].t;
