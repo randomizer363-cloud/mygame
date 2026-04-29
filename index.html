@@ -3,23 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>МухиVSКотлеты: Наследие</title>
+    <title>МухиVSКотлеты: Наследие (Updated Menu)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* БАЗОВЫЕ СТИЛИ ИЗ INDEX 2 */
         body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; overflow: hidden; background-color: #000; touch-action: none; height: 100vh; }
         #splash-screen { position: fixed; inset: 0; z-index: 300; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #bg-logo { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: -1; }
         #global-stats { background: rgba(0,0,0,0.4); color: #fff; padding: 10px 20px; border-radius: 15px; margin-bottom: 20px; backdrop-filter: blur(5px); text-align: center; font-size: 14px; font-weight: bold; border: 1px solid rgba(255,255,255,0.1); }
         .btn-ui { padding: 15px 40px; font-size: 18px; color: white; border: none; border-radius: 18px; font-weight: bold; cursor: pointer; background: rgba(0, 136, 204, 0.35); backdrop-filter: blur(8px); margin-bottom: 12px; width: 240px; border: 1px solid rgba(255,255,255,0.1); transition: 0.3s; }
+        
         #calc-overlay, #intro-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 400; display: none; align-items: center; justify-content: center; }
         .modal-window { width: 85%; max-width: 320px; background: white; border-radius: 20px; padding: 25px; text-align: center; color: #333; }
         .calc-input { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
         #calcOutput { margin-top: 10px; padding: 12px; background: #f8f9fa; border-radius: 10px; font-size: 13px; min-height: 60px; border: 1px dashed #4caf50; display: flex; align-items: center; justify-content: center; line-height: 1.4; color: #333; }
-        #menu-overlay { position: fixed; inset: 0; background: #fff; z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 20px; overflow-y: auto; }
-        .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 20px; width: 85%; }
-        .level-card { height: 70px; background: #eee; border-radius: 15px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; color: #aaa; text-align: center; padding: 5px; box-sizing: border-box; }
-        .level-card.open { background: #0088cc; color: white; }
         
+        /* СТИЛЬ МЕНЮ ИЗ INDEX 3 */
+        #menu-overlay { position: fixed; inset: 0; background: rgba(10,10,10,0.98); z-index: 200; display: none; flex-direction: column; align-items: center; padding-top: 60px; overflow-y: auto; color: white; }
+        .levels-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 400px; padding: 20px; box-sizing: border-box; }
+        .level-card { height: 80px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; transition: all 0.2s ease; text-align: center; padding: 10px; box-sizing: border-box; }
+        .level-card:active { transform: scale(0.9); }
+        .lvl-fly { background: rgba(0, 136, 204, 0.2); box-shadow: 0 0 15px rgba(0, 136, 204, 0.3); border-color: #0088cc; color: #fff; }
+        .lvl-kot { background: rgba(255, 77, 77, 0.2); box-shadow: 0 0 15px rgba(255, 77, 77, 0.3); border-color: #ff4d4d; color: #fff; }
+        .lvl-locked { background: rgba(50,50,50,0.5); border-color: #333; color: #666; cursor: default; }
+        .lvl-locked:active { transform: none; }
+        
+        /* ИГРОВАЯ ОБЛАСТЬ ИЗ INDEX 2 */
         #game-area { position: relative; width: 100%; height: 100%; display: none; overflow: hidden; background: #fff; }
         .tap-zone { width: 50%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: background 0.2s; z-index: 5; }
         #zone-left { background: #ffdde1; } #zone-right { background: #d1e8ff; }
@@ -43,7 +52,7 @@
         #btn-p { background: #2ecc71; left: 66.6%; }
 
         #info-bar { position: absolute; top: 50px; width: 100%; display: flex; justify-content: center; gap: 8px; z-index: 200; pointer-events: none; }
-        .info-item { background: rgba(255,255,255,0.9); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #eee; }
+        .info-item { background: rgba(255,255,255,0.9); padding: 5px 12px; border-radius: 12px; font-size: 12px; font-weight: bold; border: 1px solid #eee; color: #000; }
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 1000; display: none; flex-direction: column; align-items: center; justify-content: center; color: white; text-align: center; padding: 30px; }
 
         .box-drift { position: absolute; animation: driftBox 1.3s infinite alternate ease-in-out; pointer-events: none; }
@@ -61,6 +70,13 @@
         <div id="global-stats">🏆 Баллы: <span id="gs-pts">0</span> | 🍔 Котлеты: <span id="gs-kots">0</span></div>
         <button class="btn-ui" onclick="showMenu()">ИГРАТЬ</button>
         <button class="btn-ui" style="background:rgba(76,175,80,0.35)" onclick="toggleCalc(true)">🧮 КАЛЬКУЛЯТОР</button>
+    </div>
+
+    <div id="menu-overlay">
+        <h2 style="color:#0088cc; margin-bottom: 5px;">ВЫБОР ЭТАПА</h2>
+        <div class="levels-grid" id="levels-grid"></div>
+        <button onclick="hideMenu()" style="background:none; border:none; color:#999; margin-top:20px; font-weight:bold; cursor:pointer">НАЗАД</button>
+        <div style="height: 40px;"></div>
     </div>
 
     <div id="intro-overlay">
@@ -83,12 +99,6 @@
             <button class="btn-ui" style="width:100%; background:#4caf50; margin-top:10px" onclick="doCalc()">РАССЧИТАТЬ</button>
             <button onclick="toggleCalc(false)" style="margin-top:10px; border:none; background:none; color:#999">Закрыть</button>
         </div>
-    </div>
-
-    <div id="menu-overlay">
-        <h2 style="color:#0088cc">ВЫБОР УРОВНЯ</h2>
-        <div class="levels-grid" id="levels-grid"></div>
-        <button onclick="hideMenu()" style="background:none; border:none; color:#999; margin-top:20px; font-weight:bold">Назад</button>
     </div>
 
     <div id="game-area">
@@ -150,17 +160,18 @@
         let globalKots = parseInt(localStorage.getItem('global_kots')) || 0;
         let curLvl, points, timeLeft, errors, gameActive, gameStarted, lvlKots, loop, runnerInt, spawnInt, pLane, curEmoji, ivanSide;
 
+        // Данные уровней с указанием сторон (для стилизации карточек)
         const levelData = [
-            { t: "Сортировка: Начало", s: "Вы только что устроились на кухню. Нужно быстро распределить продукты.", w: "Цель: Наберите 20 очков.", time: 30 },
-            { t: "Внимание: Иван!", s: "Иван пытается прорваться к еде! Его нужно вовремя перенаправлять.", w: "Цель: Наберите 35 очков.", time: 25 },
-            { t: "Золотая монета", s: "Склад завален коробками, и где-то среди них скачет редкая монета!", w: "Цель: Соберите 3 монеты за 15 сек.", time: 15 },
-            { t: "Никита у плиты", s: "Никита опять хулиганит. Сортируйте мусор и еду.", w: "Цель: Наберите 15 очков.", time: 30 },
-            { t: "Найди слона", s: "Слон спрятался за мебелью и постоянно прыгает! Не раздавите мух.", w: "Цель: Нажмите на слона 1 раз.", time: 20 },
-            { t: "Чистка самовара", s: "Самовар огромный! Нужно тереть его губкой, но берегитесь пауков.", w: "Цель: 50 нажатий за 60 сек.", time: 60 },
-            { t: "Паутина", s: "Кухня заросла паутиной. Очистите пространство.", w: "Цель: Наберите 20 очков.", time: 30 },
-            { t: "Полёт за обедом", s: "Вы летите на мухе! Собирайте еду и уклоняйтесь от веников.", w: "Цель: Наберите 15 очков.", time: 40 },
-            { t: "Чаепитие", s: "Пришли гости. Разливайте чай и рассаживайте людей.", w: "Цель: Наберите 20 очков.", time: 35 },
-            { t: "БИТВА ЗА ПЮРЕШКУ", s: "Решающий момент! Бейте по кнопкам точно в ритм падающей еды.", w: "Цель: Наберите 100 очков.", time: 45 }
+            { t: "1. Сортировка", side: "kots", s: "Вы только что устроились на кухню. Нужно быстро распределить продукты.", w: "Цель: Наберите 20 очков.", time: 30 },
+            { t: "2. Внимание: Иван!", side: "kots", s: "Иван пытается прорваться к еде! Его нужно вовремя перенаправлять.", w: "Цель: Наберите 35 очков.", time: 25 },
+            { t: "3. Золотая монета", side: "fly", s: "Склад завален коробками, и где-то среди них скачет редкая монета!", w: "Цель: Соберите 3 монеты за 15 сек.", time: 15 },
+            { t: "4. Никита у плиты", side: "kots", s: "Никита опять хулиганит. Сортируйте мусор и еду.", w: "Цель: Наберите 15 очков.", time: 30 },
+            { t: "5. Найди слона", side: "fly", s: "Слон спрятался за мебелью и постоянно прыгает! Не раздавите мух.", w: "Цель: Нажмите на слона 1 раз.", time: 20 },
+            { t: "6. Чистка самовара", side: "kots", s: "Самовар огромный! Нужно тереть его губкой, но берегитесь пауков.", w: "Цель: 50 нажатий за 60 сек.", time: 60 },
+            { t: "7. Паутина", side: "fly", s: "Кухня заросла паутиной. Очистите пространство.", w: "Цель: Наберите 20 очков.", time: 30 },
+            { t: "8. Полёт за обедом", side: "fly", s: "Вы летите на мухе! Собирайте еду и уклоняйтесь от веников.", w: "Цель: Наберите 15 очков.", time: 40 },
+            { t: "9. Чаепитие", side: "kots", s: "Пришли гости. Разливайте чай и рассаживайте людей.", w: "Цель: Наберите 20 очков.", time: 35 },
+            { t: "10. БИТВА ПЮРЕШЕК", side: "balance", s: "Решающий момент! Бейте по кнопкам точно в ритм падающей еды.", w: "Цель: Наберите 100 очков.", time: 45 }
         ];
 
         function doCalc() {
@@ -181,16 +192,31 @@
             if(s) { s.currentTime = 0; s.play().catch(()=>{}); } 
         }
 
+        /* ОБНОВЛЕННАЯ ФУНКЦИЯ МЕНЮ С СЕТКОЙ ИЗ INDEX 3 */
         function showMenu() {
             hideModes(); document.getElementById('splash-screen').style.display = 'none';
             document.getElementById('finish-overlay').style.display = 'none';
             document.getElementById('game-area').style.display = 'none';
             document.getElementById('menu-overlay').style.display = 'flex';
+            
             const grid = document.getElementById('levels-grid'); grid.innerHTML = '';
             levelData.forEach((l, i) => {
-                let div = document.createElement('div'); div.className = `level-card ${i < unlocked ? 'open' : ''}`;
-                div.innerText = i < unlocked ? l.t : '🔒';
-                if(i < unlocked) div.onclick = () => { curLvl = i + 1; showIntro(); };
+                let div = document.createElement('div');
+                const isOpen = i < unlocked;
+                
+                // Стилизация карточки
+                if (!isOpen) {
+                    div.className = 'level-card lvl-locked';
+                    div.innerHTML = `<div style="font-size:18px">🔒</div>`;
+                } else {
+                    let sideClass = l.side === 'fly' ? 'lvl-fly' : 'lvl-kot';
+                    if (l.side === 'balance') sideClass = ''; // Доп. стиль для финала можно добавить
+                    div.className = `level-card ${sideClass}`;
+                    if (l.side === 'balance') div.style.background = 'linear-gradient(to bottom, #4b0082, #000)';
+                    
+                    div.innerHTML = `<div style="font-size:18px">${i+1}</div><div style="font-size:11px">${l.t}</div>`;
+                    div.onclick = () => { curLvl = i + 1; showIntro(); };
+                }
                 grid.appendChild(div);
             });
             document.getElementById('gs-pts').innerText = globalPts.toFixed(0);
@@ -219,6 +245,7 @@
             else { document.getElementById('standard-mode').style.display = 'flex'; nextItem(); }
         }
 
+        // --- ЛОГИКА МЕХАНИК (ИЗ INDEX 2) ---
         let samovarActiveZone = -1;
         function initSamovarGrid() {
             spawnInt = setInterval(() => {
@@ -292,7 +319,7 @@
                     f.onclick = () => endGame('lose'); area.appendChild(f);
                     setTimeout(() => f.remove(), 400);
                 }
-            }, isCoin ? 750 : 250); // ПРАВКА: 0.75 сек для монеты
+            }, isCoin ? 750 : 250);
             startTimer();
         }
 
@@ -342,13 +369,10 @@
             gameActive = false; hideModes(); 
             let win = r === 'win';
             let msg = win ? 'ПОБЕДА' : 'ПРОИГРЫШ';
-
-            // ПРАВКА: Условия для Ивана
             if(curLvl === 2) {
                 if(win) msg = "Иван успел за пивом, котлеты в безопасности.";
                 else if(curEmoji === 'ivan' || errors >= 5) msg = "ИВАН УКРАЛ ВСЕ КОТЛЕТЫ";
             }
-
             if(win) { 
                 if(curLvl === unlocked) unlocked++; 
                 globalPts += points; globalKots += lvlKots; 
@@ -357,11 +381,11 @@
                 localStorage.setItem('global_kots', globalKots); 
                 play('snd-win'); 
             } else play('snd-lose');
-
             document.getElementById('finish-content').innerHTML = `<h1>${msg}</h1><p>Баллы: ${points}</p><p>Котлеты: ${lvlKots}</p>`;
             document.getElementById('finish-overlay').style.display = 'flex';
         }
 
+        // --- УПРАВЛЕНИЕ ---
         let touchStartX = 0, touchStartY = 0;
         document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; touchStartY = e.changedTouches[0].screenY; }, false);
         document.addEventListener('touchend', e => {
